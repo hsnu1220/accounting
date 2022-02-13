@@ -13,7 +13,7 @@ from plotly import express as px
 ### ===== global variables ===== ###
 ym_format = '%Y/%m'
 date_format = f'{ym_format}/%d'
-col_ym = '年月'
+col_ym = '年/月'
 
 col_date = '日期'
 col_store = '商店'
@@ -26,8 +26,9 @@ cols_sheet = [col_date, col_store, col_item, col_amount, col_class]
 ### ===== page config ===== ###
 st.set_page_config(
     page_title='滿月記帳表',
-    page_icon='random',
-    layout='centered'
+    page_icon=':whale:',
+    layout='centered',
+    initial_sidebar_state='collapsed'
 )
 st.title('布基帳')
 
@@ -57,12 +58,32 @@ df_raw = get_google_sheet(
 
 
 ### ===== summarize by month ===== ###
-st.sidebar.header('時間範圍')
-today = datetime.strptime(
-   st.sidebar.text_input(label='始', value=date.today().strftime('%Y/%m/%d')),
-   date_format
-)
-num_months = int(st.sidebar.text_input(label='比較月份數', value='3'))
+st.sidebar.header('比較範圍')
+num_months = int(st.sidebar.text_input(label='月', value='3'))
+
+
+### ===== monthly total ===== ###
+st.header('逐月總支出')
+df_month = df_raw.groupby(by=col_ym, as_index=False)[col_amount].agg('sum')
+fig_line = go.Figure(go.Scatter(
+   name=col_amount,
+   mode='markers',
+   x=df_month[col_ym],
+   y=df_month[col_amount],
+   marker=dict(
+      size=16
+   )
+))
+fig_line.add_trace(go.Scatter(
+   name=f'過去{num_months}個月移動平均',
+   mode='lines',
+   x=df_month[col_ym],
+   y=df_month[col_amount].rolling(num_months, min_periods=1).mean(),
+   line=dict(
+      width=8
+   )
+))
+st.plotly_chart(fig_line)
 
 
 ### ===== pie chart by class ===== ###
@@ -105,27 +126,3 @@ with st.expander('明細'):
 st.header('逐月類別')
 fig_bar = px.bar(df_raw, x=col_ym, y=col_amount, color=col_class)
 st.plotly_chart(fig_bar)
-
-
-### ===== monthly total ===== ###
-st.header('逐月總開銷')
-df_month = df_raw.groupby(by=col_ym, as_index=False)[col_amount].agg('sum')
-fig_line = go.Figure(go.Scatter(
-   name=col_amount,
-   mode='markers',
-   x=df_month[col_ym],
-   y=df_month[col_amount],
-   marker=dict(
-      size=16
-   )
-))
-fig_line.add_trace(go.Scatter(
-   name=f'過去{num_months}個月移動平均',
-   mode='lines',
-   x=df_month[col_ym],
-   y=df_month[col_amount].rolling(num_months, min_periods=1).mean(),
-   line=dict(
-      width=8
-   )
-))
-st.plotly_chart(fig_line)
