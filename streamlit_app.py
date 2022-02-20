@@ -1,13 +1,10 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
 import requests
 import io
-from datetime import date, timedelta, datetime
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from plotly import express as px
-
 
 
 ### ===== global variables ===== ###
@@ -50,6 +47,7 @@ def get_google_sheet(serial_num, name):
    df[col_amount] = df[col_amount].str.replace(r'[\$,]', '', regex=True).astype('int32')
    df[col_ym] = df.index.strftime(ym_format)
    return df
+
 
 df_raw = get_google_sheet(
    serial_num='1WgZrSv9pNPyAd7IutFJ43aB5UX8KiWGGSEfHK76xoS4',
