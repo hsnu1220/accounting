@@ -10,6 +10,9 @@ from plotly import express as px
 ### ===== global variables ===== ###
 hdr_out = '支出'
 hdr_total = '滿月記帳表'
+map_hdr_id = dict()
+map_hdr_id[hdr_out] = 'spending'
+map_hdr_id[hdr_total] = 'accounting'
 
 ym_format = '%Y/%m'
 date_format = f'{ym_format}/%d'
@@ -60,15 +63,20 @@ num_months = int(st.sidebar.text_input(label='月', value='3'))
 st.sidebar.markdown(
    f'''
    ## 目錄
-   - [{hdr_out}](#{hdr_out})
-   - [{hdr_total}](#{hdr_total})
+   - [{hdr_out}](#{map_hdr_id[hdr_out]})
+   - [{hdr_total}](#{map_hdr_id[hdr_total]})
    ''',
    unsafe_allow_html=True
 )
 
 
 ### ===== spending ===== ###
-st.title(hdr_out)
+st.markdown(
+   f'''
+   <h1><a id='{map_hdr_id[hdr_out]}'>{hdr_out}</a></h1>
+   ''',
+   unsafe_allow_html=True
+)
 df_raw = get_google_sheet(
    serial_num='1WgZrSv9pNPyAd7IutFJ43aB5UX8KiWGGSEfHK76xoS4',
    name='總表'
@@ -147,5 +155,10 @@ st.plotly_chart(fig_month_class)
 
 
 ### ===== monthly accounting ===== ###
-st.header(hdr_total)
+st.markdown(
+   f'''
+   <h1><a id='{map_hdr_id[hdr_total]}'>{hdr_total}</a></h1>
+   ''',
+   unsafe_allow_html=True
+)
 st.write('WIP')
