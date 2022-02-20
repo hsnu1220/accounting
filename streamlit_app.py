@@ -19,6 +19,8 @@ col_amount = '金額'
 col_class = '類別'
 cols_sheet = [col_date, col_store, col_item, col_amount, col_class]
 
+hues = px.colors.qualitative.Safe
+
 
 ### ===== page config ===== ###
 st.set_page_config(
@@ -100,8 +102,11 @@ for idx, ym in enumerate(ym_list[-num_months:]):
       go.Pie(
          labels=df_class[col_class],
          values=df_class[col_amount],
+         hoverinfo='label+percent',
          textposition='inside',
          textinfo='label+value',
+         textfont_size=20,
+         marker=dict(colors=hues),
          showlegend=False
       ),
       row=1, col=(idx + 1)
@@ -122,5 +127,11 @@ with st.expander('明細'):
 
 ### ===== monthly bar chart ===== ###
 st.header('逐月類別')
-fig_bar = px.bar(df_raw, x=col_ym, y=col_amount, color=col_class)
+fig_bar = px.bar(
+   data_frame=df_raw,
+   x=col_ym,
+   y=col_amount,
+   color=col_class,
+   color_discrete_sequence=hues
+)
 st.plotly_chart(fig_bar)
