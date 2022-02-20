@@ -34,10 +34,10 @@ st.title('布基帳')
 
 
 ### ===== get google sheet ===== ###
-@st.cache(suppress_st_warning=True)
+# @st.cache(suppress_st_warning=True)
 def get_google_sheet(serial_num, name):
-   header = 'https://docs.google.com/spreadsheets/d'
-   url = f'{header}/{serial_num}/gviz/tq?tqx=out:csv&sheet={name}'
+   end_point = 'https://docs.google.com/spreadsheets/d'
+   url = f'{end_point}/{serial_num}/gviz/tq?tqx=out:csv&sheet={name}'
    content = requests.get(url).content
 
    df = pd.read_csv(
