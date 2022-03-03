@@ -107,7 +107,7 @@ st.plotly_chart(fig_month_total)
 
 # recent few months by class
 st.header(f'過去{num_months}個月')
-ym_list = df_raw[col_ym].unique().tolist()
+ym_list = df_raw[col_ym].dropna().unique().tolist()
 fig_recent_class = make_subplots(
    rows=1, cols=num_months,
    specs=[[{'type': 'pie'} for _ in range(num_months)]],
