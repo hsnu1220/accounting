@@ -121,15 +121,18 @@ for idx, ym in enumerate(ym_list[-num_months:]):
       go.Pie(
          labels=df_class[col_class],
          values=df_class[col_amount],
-         hoverinfo='label+percent',
          textposition='inside',
          textinfo='label+value',
          textfont_size=20,
+         hoverinfo='label+percent',
          marker=dict(colors=hues),
          showlegend=False
       ),
       row=1, col=(idx + 1)
    )
+fig_recent_class.update_layout(
+   hoverlabel=dict(font_size=16)
+)
 st.plotly_chart(fig_recent_class)
 
 # monthly detail
