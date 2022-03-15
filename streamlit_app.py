@@ -1,120 +1,39 @@
 import streamlit as st
 import pandas as pd
-import requests
-import io
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from plotly import express as px
+import consts as C
+from utils import get_google_sheet
 
 
 ### ===== global variables ===== ###
 HDR_OUT = '支出'
 HDR_NET = '滿月記帳表'
 HDR_DOC = '說明'
+
 hdr_to_id = dict()
 hdr_to_id[HDR_OUT] = 'spending'
 hdr_to_id[HDR_NET] = 'accounting'
 hdr_to_id[HDR_DOC] = 'documentation'
 
-# SHEET_ID = '1WgZrSv9pNPyAd7IutFJ43aB5UX8KiWGGSEfHK76xoS4'
 SHEET_ID = '1-wag8UYLCjzHL-kzvc81TwAOunPTVK01Cq3ZsO5ukck'
 SHEET_NAME = '總表'
 
-col_ym = '年月'
-col_dd = '日'
-col_store = '店'
-col_item = '項'
-col_amount = '額'
-col_tag = '標'
-col_pay = '方式'
-col_freq = '頻率'
-cols_sheet = [
-   col_ym, col_dd, col_store, col_item, col_amount,
-   col_tag, col_pay, col_freq
-]
-
-col_class = '類'
-cls_rent = '租'
-cls_life = '生活'
-cls_cook = '煮食'
-cls_dine = '食外'
-cls_fun = '消遣'
-cls_health = '健康'
-cls_move = '交通'
-cls_default = '無'
-classes = [
-   cls_rent, cls_life, cls_cook, cls_dine,
-   cls_fun, cls_health, cls_move, cls_default
-]
-
-pay_card = '卡'
-pay_digit = '數碼'
-pay_default = '現金'
-pays = [pay_card, pay_digit, pay_default]
-
-freq_month = '每月'
-freq_bimonth = '隔月'
-freq_trip = '𨑨迌'
-freq_year = '過年'
-freq_topup = '入錢'
-freq_sub = '訂閱'
-freq_default = '一擺'
-freqs = [
-   freq_month, freq_bimonth, freq_trip, freq_year,
-   freq_topup, freq_sub, freq_default
-]
-
-col_pct = '比例'
-hues = px.colors.qualitative.Set3
+COL_PCT = '比例'
+HUES = px.colors.qualitative.Set3
 FONT_SIZE_TEXT = 20
 FONT_SIZE_HOVER = 16
 
 
 ### ===== helper functions ===== ###
-def tag_to_class(tag):
-   if tag in ['蹛', '水電', '厝內']:
-      return cls_rent
-   elif tag in ['家具', '度日', '植物', '穿插', '梳妝']:
-      return cls_life
-   elif tag in ['菜市', '超市', '做麭']:
-      return cls_cook
-   elif tag in ['好料', '四秀', '食涼']:
-      return cls_dine
-   elif tag in ['冊', '票', '麻雀', '網影', '順紲']:
-      return cls_fun
-   elif tag in ['保健', '運動']:
-      return cls_health
-   elif tag in ['駛車', '騎車', '通勤', '坐車']:
-      return cls_move
-   else:
-      return cls_default
-
-
-# @st.cache(suppress_st_warning=True)
-def get_google_sheet(id, name):
-   end_point = 'https://docs.google.com/spreadsheets/d'
-   url = f'{end_point}/{id}/gviz/tq?tqx=out:csv&sheet={name}'
-   content = requests.get(url).content
-
-   df = pd.read_csv(
-      io.StringIO(content.decode('utf-8')),
-      usecols=cols_sheet
-   ).fillna(value='')
-   df[col_amount] = df[col_amount].astype('int32')
-   df[col_pay] = df[col_pay].replace('', pay_default)
-   df[col_freq] = df[col_freq].replace('', freq_default)
-   df[col_class] = df[col_tag].transform(tag_to_class)
-
-   return df
-
-
-def get_color_map(group=col_class):
-   arr = classes
-   if group == col_pay:
-      arr = pays
-   elif group == col_freq:
-      arr = freqs
-   return {elm: hue for elm, hue in zip(arr, hues)}
+def get_color_map(group=C.COL_CLASS):
+   arr = C.CLASSES
+   if group == C.COL_PAY:
+      arr = C.PAYS
+   elif group == C.COL_FREQ:
+      arr = C.FREQS
+   return {elm: hue for elm, hue in zip(arr, HUES)}
 
 
 ### ===== page config ===== ###
@@ -132,7 +51,7 @@ num_months = int(st.sidebar.text_input(label='月', value='3'))
 st.sidebar.header('分組')
 col_group = st.sidebar.radio(
    label='照',
-   options=[col_class, col_pay, col_freq],
+   options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
 )
 
 st.sidebar.markdown(
@@ -164,121 +83,139 @@ st.markdown(
    unsafe_allow_html=True
 )
 df_raw = get_google_sheet(id=SHEET_ID, name=SHEET_NAME)
-ym_list = df_raw[col_ym].dropna().unique().tolist()
+ym_list = df_raw[C.COL_YM].dropna().unique().tolist()
 
 # monthly total
 st.header('攏總')
-df_total = df_raw.groupby(by=col_ym, as_index=False)[col_amount].agg('sum')
-fig_total = go.Figure(go.Scatter(
-   name=col_amount,
+df_monthly_total = df_raw.groupby(
+   by=C.COL_YM,
+   as_index=False
+)[C.COL_AMOUNT].agg('sum')
+fig_monthly_total = go.Figure(go.Scatter(
+   name=C.COL_AMOUNT,
    mode='markers',
-   x=df_total[col_ym],
-   y=df_total[col_amount],
+   x=df_monthly_total[C.COL_YM],
+   y=df_monthly_total[C.COL_AMOUNT],
    marker=dict(
       size=16
    )
 ))
-fig_total.add_trace(go.Scatter(
+fig_monthly_total.add_trace(go.Scatter(
    name=f'過去{num_months}個月移動平均',
    mode='lines',
-   x=df_total[col_ym],
-   y=df_total[col_amount].rolling(num_months, min_periods=1).mean(),
+   x=df_monthly_total[C.COL_YM],
+   y=df_monthly_total[C.COL_AMOUNT].rolling(num_months, min_periods=1).mean(),
    line=dict(
       width=8
    )
 ))
-st.plotly_chart(fig_total)
+st.plotly_chart(fig_monthly_total)
 
-# recent few months by class
+# recent few months by group
 st.header(f'過去{num_months}個月')
-fig_recent = make_subplots(
+subtitles = [
+   f'{ym}<br>${total}'
+   for ym, total in zip(df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT])
+]
+fig_recent_months = make_subplots(
    rows=1, cols=num_months,
    specs=[[{'type': 'pie'} for _ in range(num_months)]],
-   subplot_titles=[
-      f'{ym}<br>${total}'
-      for ym, total in zip(df_total[col_ym], df_total[col_amount])
-   ][-num_months:]
+   subplot_titles=subtitles[-num_months:]
 )
 for idx, ym in enumerate(ym_list[-num_months:]):
-   df_month = df_raw.query(f'{col_ym} == @ym')
-   df_class = df_month.groupby(by=col_group, as_index=False)[col_amount].agg('sum')
-   df_class[col_pct] = (
-      df_class[col_amount] / df_class[col_amount].sum() * 1E2
+   df_curr_month = df_raw.query(f'{C.COL_YM} == @ym')
+   df_by_group = df_curr_month.groupby(
+      by=col_group,
+      as_index=False
+   )[C.COL_AMOUNT].agg('sum')
+   df_by_group[COL_PCT] = (
+      df_by_group[C.COL_AMOUNT] / df_by_group[C.COL_AMOUNT].sum() * 1E2
    ).transform(lambda pct: f'{pct:.1f}')
 
-   fig_pie = px.pie(
-      df_class,
+   fig_by_group = px.pie(
+      df_by_group,
       names=col_group,
-      values=col_amount,
+      values=C.COL_AMOUNT,
       color=col_group,
       color_discrete_map=get_color_map(col_group),
-      hover_data=[col_pct]
+      hover_data=[COL_PCT]
    )
-   fig_pie.update_traces(
+   fig_by_group.update_traces(
       hovertemplate='%{customdata[0][1]}=%{customdata[0][0]}%<extra></extra>'
    )
-   fig_recent.add_trace(
-      fig_pie.data[0],
+   fig_recent_months.add_trace(
+      fig_by_group.data[0],
       row=1, col=(idx + 1)
    )
-fig_recent.update_traces(
+fig_recent_months.update_traces(
    textposition='inside',
    textinfo='label+value',
    textfont_size=FONT_SIZE_TEXT,
 )
-fig_recent.update_layout(
+fig_recent_months.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
-st.plotly_chart(fig_recent)
+st.plotly_chart(fig_recent_months)
 
 # monthly detail
 st.header('這月分組')
-ym = st.selectbox(label=col_ym, options=ym_list, index=len(ym_list)-1)
-df_month = df_raw.query(f'{col_ym} == @ym')
-df_class = df_month.groupby(by=col_group, as_index=False)[col_amount].agg('sum')
-df_class.sort_values(by=col_amount, inplace=True)
-num_classes = df_class[col_group].shape[0]
-fig_month = make_subplots(
+ym = st.selectbox(label=C.COL_YM, options=ym_list, index=len(ym_list)-1)
+df_curr_month = df_raw.query(f'{C.COL_YM} == @ym')
+df_by_group = df_curr_month.groupby(
+   by=col_group,
+   as_index=False
+)[C.COL_AMOUNT].agg('sum')
+df_by_group.sort_values(by=C.COL_AMOUNT, inplace=True)
+num_classes = df_by_group[col_group].shape[0]
+
+fig_curr_month = make_subplots(
    rows=1, cols=num_classes,
    specs=[[{'type': 'pie'} for _ in range(num_classes)]],
    subplot_titles=[
       f'{cls}<br>${total}'
-      for cls, total in zip(df_class[col_group], df_class[col_amount])
+      for cls, total in zip(df_by_group[col_group], df_by_group[C.COL_AMOUNT])
    ]
 )
-for idx, cls in enumerate(df_class[col_group]):
-   df_class = df_month.query(f'{col_group} == @cls')
-   df_tag = df_class.groupby(by=col_tag, as_index=False)[col_amount].agg('sum')
-   fig_month.add_trace(
+for idx, cls in enumerate(df_by_group[col_group]):
+   df_by_group = df_curr_month.query(f'{col_group} == @cls')
+   df_by_tag = df_by_group.groupby(
+      by=C.COL_TAG,
+      as_index=False
+   )[C.COL_AMOUNT].agg('sum')
+   fig_curr_month.add_trace(
       go.Pie(
-         labels=df_tag[col_tag],
-         values=df_tag[col_amount],
+         labels=df_by_tag[C.COL_TAG],
+         values=df_by_tag[C.COL_AMOUNT],
          textposition='inside',
          textinfo='label+value',
          textfont_size=FONT_SIZE_TEXT,
+         insidetextorientation='horizontal',
          hoverinfo='label+percent',
-         marker=dict(colors=hues),
+         marker=dict(colors=HUES),
          showlegend=False
       ),
       row=1, col=(idx + 1)
    )
-fig_month.update_layout(
+fig_curr_month.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
-st.plotly_chart(fig_month)
+st.plotly_chart(fig_curr_month)
 with st.expander('明細'):
-   st.table(df_month.drop(columns=[col_ym, col_pay, col_freq]))
+   cols_detail = [
+      C.COL_DD, C.COL_STORE, C.COL_ITEM, C.COL_AMOUNT, C.COL_TAG, col_group
+   ]
+   st.table(df_curr_month[cols_detail])
 
-# each month by class
+# each month by group
 st.header('逐月分組')
-fig_all = px.bar(
+fig_all_months = px.bar(
    data_frame=df_raw,
-   x=col_ym,
-   y=col_amount,
+   x=C.COL_YM,
+   y=C.COL_AMOUNT,
    color=col_group,
    color_discrete_map=get_color_map(col_group)
 )
-st.plotly_chart(fig_all)
+st.plotly_chart(fig_all_months)
 
 
 ### ===== DOCUMENTATION ===== ###
@@ -294,7 +231,7 @@ st.markdown(
    - 租：月租
       - 蹛：(出遊)住宿、管理費
       - 水電：水、電、瓦斯、電信(網路)
-      - 厝內：孝親費、紅包、幫家裡代買
+      - 厝內：孝親費、幫家裡代買、紅包
    - 生活
       - 家具：非消耗品
       - 度日：消耗品
@@ -302,8 +239,8 @@ st.markdown(
       - 穿插：含鞋子
       - 梳妝：保養品、剪髮
    - 煮食
-      - 菜市：菜市場、水果行
-      - 超市：大潤發、全聯、希望廣場
+      - 菜市：菜市場、水果行、希望廣場
+      - 超市：大潤發、全聯
       - 做麭：做麵包食材
    - 食外：外食
       - 好料：外食錢包
