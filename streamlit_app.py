@@ -101,7 +101,7 @@ fig_monthly_total.add_trace(go.Scatter(
    x=df_monthly_total[C.COL_YM],
    y=df_monthly_total[C.COL_AMOUNT].rolling(num_months_focus, min_periods=1).mean(),
    line=dict(
-      width=8
+      width=6
    )
 ))
 fig_monthly_total.update_yaxes(
@@ -115,9 +115,34 @@ fig_monthly_total.update_yaxes(
 )
 fig_monthly_total.update_xaxes(
    title_text=C.COL_YM,
+   showgrid=False,
    tickfont_size=FONT_SIZE_TICK
 )
 st.plotly_chart(fig_monthly_total, use_container_width=True)
+
+
+# each month by group
+st.markdown('#### 逐月分組')
+fig_all_months = px.bar(
+   data_frame=df_raw,
+   x=C.COL_YM,
+   y=C.COL_AMOUNT,
+   color=col_group,
+   color_discrete_map=get_color_map(col_group)
+)
+fig_all_months.update_yaxes(
+   title_text='萬',
+   gridwidth=0.1,
+   tickmode='array',
+   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+   ticktext=list(range(max_amount_in_ban7 + 1)),
+   tickfont_size=FONT_SIZE_TICK,
+   tickwidth=10
+)
+fig_all_months.update_xaxes(
+   tickfont_size=FONT_SIZE_TICK
+)
+st.plotly_chart(fig_all_months, use_container_width=True)
 
 
 # recent few months by group
@@ -132,7 +157,7 @@ elif center_idx == 0:
    center_idx += 1
 target_indices = list(range(center_idx - 1, center_idx + 2))
 fig_subtitles = [
-   f'{ym}<br>${total}'
+   f'<b>{ym}</b><br>${total}'
    for ym, total in zip(df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT])
 ]
 fig_recent_months = make_subplots(
@@ -191,7 +216,7 @@ fig_curr_month = make_subplots(
    rows=1, cols=num_classes,
    specs=[[{'type': 'pie'} for _ in range(num_classes)]],
    subplot_titles=[
-      f'{cls}<br>${total}'
+      f'<b>{cls}</b><br>${total}'
       for cls, total in zip(df_by_group[col_group], df_by_group[C.COL_AMOUNT])
    ]
 )
@@ -226,28 +251,14 @@ with st.expander('明細'):
    st.table(df_curr_month[cols_detail])
 
 
-# each month by group
-st.markdown('### 逐月分組')
-fig_all_months = px.bar(
-   data_frame=df_raw,
-   x=C.COL_YM,
-   y=C.COL_AMOUNT,
-   color=col_group,
-   color_discrete_map=get_color_map(col_group)
-)
-fig_all_months.update_yaxes(
-   title_text='萬',
-   gridwidth=0.1,
-   tickmode='array',
-   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
-   ticktext=list(range(max_amount_in_ban7 + 1)),
-   tickfont_size=FONT_SIZE_TICK,
-   tickwidth=10
-)
-fig_all_months.update_xaxes(
-   tickfont_size=FONT_SIZE_TICK
-)
-st.plotly_chart(fig_all_months, use_container_width=True)
+# customized query
+st.markdown('### 家己來')
+query = st.text_input(label='揣', placeholder=f"{C.COL_YM} == '{ym_list[-1]}'")
+df_result = pd.DataFrame()
+if query:
+   df_result = df_raw.query(query)
+if not df_result.empty:
+   st.table(df_result)
 
 
 ### ===== Documentation ===== ###
