@@ -7,7 +7,7 @@ import consts as C
 from utils import get_google_sheet
 
 
-### ===== global variables ===== ###
+### ===== Global variables ===== ###
 HDR_OUT = '支出'
 HDR_NET = '滿月記帳表'
 HDR_DOC = '說明'
@@ -26,7 +26,7 @@ FONT_SIZE_TEXT = 20
 FONT_SIZE_HOVER = 16
 
 
-### ===== helper functions ===== ###
+### ===== Helper functions ===== ###
 def get_color_map(group=C.COL_CLASS):
    arr = C.CLASSES
    if group == C.COL_PAY:
@@ -36,7 +36,7 @@ def get_color_map(group=C.COL_CLASS):
    return {elm: hue for elm, hue in zip(arr, HUES)}
 
 
-### ===== page config ===== ###
+### ===== Page config ===== ###
 st.set_page_config(
    page_title='布基帳',
    page_icon=':whale:',
@@ -45,15 +45,7 @@ st.set_page_config(
 )
 
 
-### ===== sidebar ===== ###
-st.sidebar.header('比較範圍')
-num_months = int(st.sidebar.text_input(label='月', value='3'))
-st.sidebar.header('分組')
-col_group = st.sidebar.radio(
-   label='照',
-   options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
-)
-
+### ===== Sidebar ===== ###
 st.sidebar.markdown(
    f"""
    ## 目錄
@@ -63,27 +55,27 @@ st.sidebar.markdown(
    """,
    unsafe_allow_html=True
 )
-
-
-### ===== MONTHLY ACCOUNTING ===== ###
-st.markdown(
-   f'''
-   <h1><a id='{hdr_to_id[HDR_NET]}'>{HDR_NET}</a></h1>
-   ''',
-   unsafe_allow_html=True
+st.sidebar.header('分組')
+col_group = st.sidebar.radio(
+   label='照',
+   options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
 )
+st.sidebar.header('比較範圍')
+radius_months = int(st.sidebar.text_input(label='頭尾幾個月', value='1'))
+num_months_focus = radius_months * 2 + 1
+
+
+### ===== Monthly accounting ===== ###
+st.header(HDR_NET, anchor=hdr_to_id[HDR_NET])
 st.write('WIP')
 
 
-### ===== SPENDING ===== ###
-st.markdown(
-   f'''
-   <h1><a id='{hdr_to_id[HDR_OUT]}'>{HDR_OUT}</a></h1>
-   ''',
-   unsafe_allow_html=True
-)
+### ===== Spending ===== ###
+st.header(HDR_OUT, anchor=hdr_to_id[HDR_OUT])
 df_raw = get_google_sheet(id=SHEET_ID, name=SHEET_NAME)
 ym_list = df_raw[C.COL_YM].dropna().unique().tolist()
+num_months_total = len(ym_list)
+
 
 # monthly total
 st.header('攏總')
@@ -101,28 +93,38 @@ fig_monthly_total = go.Figure(go.Scatter(
    )
 ))
 fig_monthly_total.add_trace(go.Scatter(
-   name=f'過去{num_months}個月移動平均',
+   name=f'{num_months_focus}個月移動平均',
    mode='lines',
    x=df_monthly_total[C.COL_YM],
-   y=df_monthly_total[C.COL_AMOUNT].rolling(num_months, min_periods=1).mean(),
+   y=df_monthly_total[C.COL_AMOUNT].rolling(num_months_focus, min_periods=1).mean(),
    line=dict(
       width=8
    )
 ))
 st.plotly_chart(fig_monthly_total)
 
+
 # recent few months by group
-st.header(f'過去{num_months}個月')
-subtitles = [
+st.header(f'最近{num_months_focus}個月')
+ym_center = st.selectbox(label=C.COL_YM, options=ym_list, index=num_months_total-1)
+
+# todo: fix bug, now only support radius_months = 1
+center_idx = ym_list.index(ym_center)
+if center_idx == num_months_total - 1:
+   center_idx -= 1
+elif center_idx == 0:
+   center_idx += 1
+target_indices = list(range(center_idx - 1, center_idx + 2))
+fig_subtitles = [
    f'{ym}<br>${total}'
    for ym, total in zip(df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT])
 ]
 fig_recent_months = make_subplots(
-   rows=1, cols=num_months,
-   specs=[[{'type': 'pie'} for _ in range(num_months)]],
-   subplot_titles=subtitles[-num_months:]
+   rows=1, cols=num_months_focus,
+   specs=[[{'type': 'pie'} for _ in range(num_months_focus)]],
+   subplot_titles=[fig_subtitles[idx] for idx in target_indices]
 )
-for idx, ym in enumerate(ym_list[-num_months:]):
+for idx, ym in enumerate(ym_list[i] for i in target_indices):
    df_curr_month = df_raw.query(f'{C.COL_YM} == @ym')
    df_by_group = df_curr_month.groupby(
       by=col_group,
@@ -151,16 +153,17 @@ fig_recent_months.update_traces(
    textposition='inside',
    textinfo='label+value',
    textfont_size=FONT_SIZE_TEXT,
+   insidetextorientation='horizontal'
 )
 fig_recent_months.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
 st.plotly_chart(fig_recent_months)
 
+
 # monthly detail
-st.header('這月分組')
-ym = st.selectbox(label=C.COL_YM, options=ym_list, index=len(ym_list)-1)
-df_curr_month = df_raw.query(f'{C.COL_YM} == @ym')
+st.markdown("### 這月分組")
+df_curr_month = df_raw.query(f'{C.COL_YM} == @ym_center')
 df_by_group = df_curr_month.groupby(
    by=col_group,
    as_index=False
@@ -206,6 +209,7 @@ with st.expander('明細'):
    ]
    st.table(df_curr_month[cols_detail])
 
+
 # each month by group
 st.header('逐月分組')
 fig_all_months = px.bar(
@@ -218,13 +222,8 @@ fig_all_months = px.bar(
 st.plotly_chart(fig_all_months)
 
 
-### ===== DOCUMENTATION ===== ###
-st.markdown(
-   f'''
-   <h1><a id='{hdr_to_id[HDR_DOC]}'>{HDR_DOC}</a></h1>
-   ''',
-   unsafe_allow_html=True
-)
+### ===== Documentation ===== ###
+st.header(HDR_DOC, anchor=hdr_to_id[HDR_DOC])
 st.markdown(
    """
    ### 標
