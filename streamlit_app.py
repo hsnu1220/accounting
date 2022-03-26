@@ -5,6 +5,7 @@ from plotly.subplots import make_subplots
 from plotly import express as px
 import consts as C
 from utils import get_google_sheet
+import math
 
 
 ### ===== Global variables ===== ###
@@ -22,6 +23,7 @@ SHEET_NAME = '總表'
 
 COL_PCT = '比例'
 HUES = px.colors.qualitative.Set3
+FONT_SIZE_TICK = 16
 FONT_SIZE_TEXT = 20
 FONT_SIZE_HOVER = 16
 
@@ -78,11 +80,12 @@ num_months_total = len(ym_list)
 
 
 # monthly total
-st.header('攏總')
+st.markdown('### 攏總')
 df_monthly_total = df_raw.groupby(
    by=C.COL_YM,
    as_index=False
 )[C.COL_AMOUNT].agg('sum')
+max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
 fig_monthly_total = go.Figure(go.Scatter(
    name=C.COL_AMOUNT,
    mode='markers',
@@ -101,11 +104,24 @@ fig_monthly_total.add_trace(go.Scatter(
       width=8
    )
 ))
-st.plotly_chart(fig_monthly_total)
+fig_monthly_total.update_yaxes(
+   title_text='萬',
+   gridwidth=0.1,
+   tickmode='array',
+   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+   ticktext=list(range(max_amount_in_ban7 + 1)),
+   tickfont_size=FONT_SIZE_TICK,
+   tickwidth=10
+)
+fig_monthly_total.update_xaxes(
+   title_text=C.COL_YM,
+   tickfont_size=FONT_SIZE_TICK
+)
+st.plotly_chart(fig_monthly_total, use_container_width=True)
 
 
 # recent few months by group
-st.header(f'最近{num_months_focus}個月')
+st.markdown(f'### 最近{num_months_focus}個月')
 ym_center = st.selectbox(label=C.COL_YM, options=ym_list, index=num_months_total-1)
 
 # todo: fix bug, now only support radius_months = 1
@@ -158,11 +174,11 @@ fig_recent_months.update_traces(
 fig_recent_months.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
-st.plotly_chart(fig_recent_months)
+st.plotly_chart(fig_recent_months, use_container_width=True)
 
 
 # monthly detail
-st.markdown("### 這月分組")
+st.markdown('#### 這月分組')
 df_curr_month = df_raw.query(f'{C.COL_YM} == @ym_center')
 df_by_group = df_curr_month.groupby(
    by=col_group,
@@ -202,7 +218,7 @@ for idx, cls in enumerate(df_by_group[col_group]):
 fig_curr_month.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
-st.plotly_chart(fig_curr_month)
+st.plotly_chart(fig_curr_month, use_container_width=True)
 with st.expander('明細'):
    cols_detail = [
       C.COL_DD, C.COL_STORE, C.COL_ITEM, C.COL_AMOUNT, C.COL_TAG, col_group
@@ -211,7 +227,7 @@ with st.expander('明細'):
 
 
 # each month by group
-st.header('逐月分組')
+st.markdown('### 逐月分組')
 fig_all_months = px.bar(
    data_frame=df_raw,
    x=C.COL_YM,
@@ -219,7 +235,19 @@ fig_all_months = px.bar(
    color=col_group,
    color_discrete_map=get_color_map(col_group)
 )
-st.plotly_chart(fig_all_months)
+fig_all_months.update_yaxes(
+   title_text='萬',
+   gridwidth=0.1,
+   tickmode='array',
+   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+   ticktext=list(range(max_amount_in_ban7 + 1)),
+   tickfont_size=FONT_SIZE_TICK,
+   tickwidth=10
+)
+fig_all_months.update_xaxes(
+   tickfont_size=FONT_SIZE_TICK
+)
+st.plotly_chart(fig_all_months, use_container_width=True)
 
 
 ### ===== Documentation ===== ###
