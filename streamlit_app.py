@@ -66,7 +66,7 @@ num_months_focus = radius_months * 2 + 1
 
 ### ===== Monthly accounting ===== ###
 st.header(HDR_NET, anchor=hdr_to_id[HDR_NET])
-st.write('WIP')
+st.markdown(':construction: :construction_worker: :construction:')
 
 
 ### ===== Spending ===== ###
