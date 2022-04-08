@@ -204,7 +204,10 @@ st.plotly_chart(fig_recent_months, use_container_width=True)
 
 # monthly detail
 st.markdown('#### 孤月')
-ym_target = st.selectbox(label=C.COL_YM, options=ym_list, index=num_months_total-1)
+ym_target = st.selectbox(
+   label=C.COL_YM,
+   options=ym_list[::-1]
+)
 df_target_month = df_raw.query(f'{C.COL_YM} == @ym_target')
 df_by_group = df_target_month.groupby(
    by=col_group,
@@ -254,7 +257,10 @@ with st.expander('明細'):
 
 # customized query
 st.markdown('### 家己來')
-query = st.text_input(label='揣', placeholder=f"{C.COL_YM} == '{ym_list[-1]}'")
+query = st.text_input(
+   label='揣',
+   placeholder=f"{C.COL_YM} == '{ym_list[-1]}' & {C.COL_CLASS} == '{C.CLS_RENT}'"
+)
 df_result = pd.DataFrame()
 if query:
    df_result = df_raw.query(query)
