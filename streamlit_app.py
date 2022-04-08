@@ -259,7 +259,7 @@ with st.expander('明細'):
 st.markdown('### 家己來')
 query = st.text_input(
    label='揣',
-   placeholder=f"{C.COL_YM} == '{ym_list[-1]}' & {C.COL_CLASS} == '{C.CLS_RENT}'"
+   value=f"{C.COL_YM} == '{ym_list[-1]}' & {C.COL_CLASS} == '{C.CLS_RENT}'"
 )
 df_result = pd.DataFrame()
 if query:
