@@ -40,7 +40,7 @@ def get_color_map(group=C.COL_CLASS):
 st.set_page_config(
    page_title='布基帳',
    page_icon=':whale:',
-   layout='centered',
+   layout='wide',
    initial_sidebar_state='collapsed'
 )
 
@@ -210,7 +210,7 @@ df_by_group = df_target_month.groupby(
    by=col_group,
    as_index=False
 )[C.COL_AMOUNT].agg('sum')
-df_by_group.sort_values(by=C.COL_AMOUNT, inplace=True)
+df_by_group.sort_values(by=C.COL_AMOUNT, ascending=False, inplace=True)
 num_classes = df_by_group[col_group].shape[0]
 
 fig_target_month = make_subplots(
