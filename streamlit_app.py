@@ -1,5 +1,5 @@
 import streamlit as st
-import pandas as pd
+# import pandas as pd
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from plotly import express as px
@@ -59,9 +59,6 @@ col_group = st.sidebar.radio(
    label='照',
    options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
 )
-st.sidebar.header('比較範圍')
-radius_months = int(st.sidebar.text_input(label='頭尾幾個月', value='1'))
-num_months_focus = radius_months * 2 + 1
 
 
 ### ===== Monthly accounting ===== ###
@@ -75,73 +72,77 @@ df_raw = get_google_sheet(id=SHEET_ID, name=SHEET_NAME)
 ym_list = df_raw[C.COL_YM].dropna().unique().tolist()
 num_months_total = len(ym_list)
 ym_idx_end = num_months_total - 1
-ym_idx_start = max(ym_idx_end - num_months_focus + 1, 0)
+ym_idx_start = max(ym_idx_end - 2, 0)
 
+
+column_monthly_left, column_monthly_right = st.columns(2)
 
 # monthly total
-st.markdown('### 攏總')
-df_monthly_total = df_raw.groupby(
-   by=C.COL_YM,
-   as_index=False
-)[C.COL_AMOUNT].agg('sum')
-max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
-fig_monthly_total = go.Figure(go.Scatter(
-   name=C.COL_AMOUNT,
-   mode='markers',
-   x=df_monthly_total[C.COL_YM],
-   y=df_monthly_total[C.COL_AMOUNT],
-   marker=dict(
-      size=16
+with column_monthly_left:
+   st.markdown('### 攏總')
+   df_monthly_total = df_raw.groupby(
+      by=C.COL_YM,
+      as_index=False
+   )[C.COL_AMOUNT].agg('sum')
+   max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
+   fig_monthly_total = go.Figure(go.Scatter(
+      name=C.COL_AMOUNT,
+      mode='markers',
+      x=df_monthly_total[C.COL_YM],
+      y=df_monthly_total[C.COL_AMOUNT],
+      marker=dict(
+         size=16
+      )
+   ))
+   fig_monthly_total.add_trace(go.Scatter(
+      name='平均',
+      mode='lines',
+      x=df_monthly_total[C.COL_YM],
+      y=df_monthly_total[C.COL_AMOUNT].rolling(3, min_periods=1).mean(),
+      line=dict(
+         width=6
+      )
+   ))
+   fig_monthly_total.update_yaxes(
+      title_text='萬',
+      gridwidth=0.1,
+      tickmode='array',
+      tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+      ticktext=list(range(max_amount_in_ban7 + 1)),
+      tickfont_size=FONT_SIZE_TICK,
+      tickwidth=10
    )
-))
-fig_monthly_total.add_trace(go.Scatter(
-   name=f'{num_months_focus}個月移動平均',
-   mode='lines',
-   x=df_monthly_total[C.COL_YM],
-   y=df_monthly_total[C.COL_AMOUNT].rolling(num_months_focus, min_periods=1).mean(),
-   line=dict(
-      width=6
+   fig_monthly_total.update_xaxes(
+      title_text=C.COL_YM,
+      showgrid=False,
+      tickfont_size=FONT_SIZE_TICK
    )
-))
-fig_monthly_total.update_yaxes(
-   title_text='萬',
-   gridwidth=0.1,
-   tickmode='array',
-   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
-   ticktext=list(range(max_amount_in_ban7 + 1)),
-   tickfont_size=FONT_SIZE_TICK,
-   tickwidth=10
-)
-fig_monthly_total.update_xaxes(
-   title_text=C.COL_YM,
-   showgrid=False,
-   tickfont_size=FONT_SIZE_TICK
-)
-st.plotly_chart(fig_monthly_total, use_container_width=True)
+   st.plotly_chart(fig_monthly_total, use_container_width=True)
 
 
 # each month by group
-st.markdown('#### 逐月分組')
-fig_all_months = px.histogram(
-   data_frame=df_raw,
-   x=C.COL_YM,
-   y=C.COL_AMOUNT,
-   color=col_group,
-   color_discrete_map=get_color_map(col_group)
-)
-fig_all_months.update_yaxes(
-   title_text='萬',
-   gridwidth=0.1,
-   tickmode='array',
-   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
-   ticktext=list(range(max_amount_in_ban7 + 1)),
-   tickfont_size=FONT_SIZE_TICK,
-   tickwidth=10
-)
-fig_all_months.update_xaxes(
-   tickfont_size=FONT_SIZE_TICK
-)
-st.plotly_chart(fig_all_months, use_container_width=True)
+with column_monthly_right:
+   st.markdown('### 逐月分組')
+   fig_all_months = px.histogram(
+      data_frame=df_raw,
+      x=C.COL_YM,
+      y=C.COL_AMOUNT,
+      color=col_group,
+      color_discrete_map=get_color_map(col_group)
+   )
+   fig_all_months.update_yaxes(
+      title_text='萬',
+      gridwidth=0.1,
+      tickmode='array',
+      tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+      ticktext=list(range(max_amount_in_ban7 + 1)),
+      tickfont_size=FONT_SIZE_TICK,
+      tickwidth=10
+   )
+   fig_all_months.update_xaxes(
+      tickfont_size=FONT_SIZE_TICK
+   )
+   st.plotly_chart(fig_all_months, use_container_width=True)
 
 
 # recent few months by group
@@ -203,17 +204,23 @@ st.plotly_chart(fig_recent_months, use_container_width=True)
 
 
 # monthly detail
-st.markdown('#### 孤月')
-ym_target = st.selectbox(
+st.markdown('### 孤月')
+ym_target = st.select_slider(
    label=C.COL_YM,
-   options=ym_list[::-1]
+   options=ym_list,
+   value=ym_list[ym_idx_end]
 )
 df_target_month = df_raw.query(f'{C.COL_YM} == @ym_target')
 df_by_group = df_target_month.groupby(
    by=col_group,
    as_index=False
 )[C.COL_AMOUNT].agg('sum')
-df_by_group.sort_values(by=C.COL_AMOUNT, ascending=False, inplace=True)
+df_by_group.sort_values(
+   by=C.COL_AMOUNT,
+   ascending=False,
+   inplace=True,
+   ignore_index=True
+)
 num_classes = df_by_group[col_group].shape[0]
 
 fig_target_month = make_subplots(
@@ -225,8 +232,8 @@ fig_target_month = make_subplots(
    ]
 )
 for idx, cls in enumerate(df_by_group[col_group]):
-   df_by_group = df_target_month.query(f'{col_group} == @cls')
-   df_by_tag = df_by_group.groupby(
+   df_target_group = df_target_month.query(f'{col_group} == @cls')
+   df_by_tag = df_target_group.groupby(
       by=C.COL_TAG,
       as_index=False
    )[C.COL_AMOUNT].agg('sum')
@@ -239,7 +246,9 @@ for idx, cls in enumerate(df_by_group[col_group]):
          textfont_size=FONT_SIZE_TEXT,
          insidetextorientation='horizontal',
          hoverinfo='label+percent',
-         marker=dict(colors=HUES),
+         marker=dict(
+            colors=px.colors.qualitative.Antique
+         ),
          showlegend=False
       ),
       row=1, col=(idx + 1)
@@ -248,21 +257,14 @@ fig_target_month.update_layout(
    hoverlabel=dict(font_size=FONT_SIZE_HOVER)
 )
 st.plotly_chart(fig_target_month, use_container_width=True)
-with st.expander('明細'):
-   cols_detail = [
-      C.COL_DD, C.COL_STORE, C.COL_ITEM, C.COL_AMOUNT, C.COL_TAG, col_group
-   ]
-   st.table(df_target_month[cols_detail])
 
 
 # customized query
-st.markdown('### 家己來')
+ex_group = df_by_group[col_group][0]
 query = st.text_input(
-   label='揣',
-   value=f"{C.COL_YM} == '{ym_list[-1]}' & {C.COL_CLASS} == '{C.CLS_RENT}'"
+   label='家己揣',
+   value=f"{C.COL_YM} == '{ym_target}' & {col_group} == '{ex_group}'"
 )
-df_result = pd.DataFrame()
-if query:
-   df_result = df_raw.query(query)
+df_result = df_raw.query(query)
 if not df_result.empty:
-   st.table(df_result)
+   st.table(df_result.drop(columns=[col_group]))
