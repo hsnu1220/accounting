@@ -15,6 +15,8 @@ COLS_GOOGLE_SHEET = [
 
 ### ===== derived classes ===== ###
 COL_CLASS = '類'
+COLS_TYPE = [COL_CLASS, COL_PAY, COL_FREQ]
+
 CLS_RENT = '租'
 CLS_LIFE = '生活'
 CLS_COOK = '煮食'

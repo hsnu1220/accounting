@@ -8,7 +8,9 @@ from utils import get_google_sheet
 import math
 
 
-### ===== Global variables ===== ###
+# ================ #
+# Global variables #
+# ================ #
 HDR_OUT = '支出'
 HDR_NET = '滿月記帳表'
 
@@ -26,7 +28,9 @@ FONT_SIZE_TEXT = 20
 FONT_SIZE_HOVER = 16
 
 
-### ===== Helper functions ===== ###
+# ================ #
+# Helper functions #
+# ================ #
 def get_color_map(group=C.COL_CLASS):
    arr = C.CLASSES
    if group == C.COL_PAY:
@@ -36,7 +40,9 @@ def get_color_map(group=C.COL_CLASS):
    return {elm: hue for elm, hue in zip(arr, HUES)}
 
 
-### ===== Page config ===== ###
+# =========== #
+# Page config #
+# =========== #
 st.set_page_config(
    page_title='布基帳',
    page_icon=':whale:',
@@ -45,7 +51,9 @@ st.set_page_config(
 )
 
 
-### ===== Sidebar ===== ###
+# ======= #
+# Sidebar #
+# ======= #
 st.sidebar.markdown(
    f"""
    ## 目錄
@@ -60,13 +68,28 @@ col_group = st.sidebar.radio(
    options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
 )
 
+# === Adjust sidebar width === #
+# st.markdown(
+#    f'''
+#    <style>
+#       section[data-testid="stSidebar"] .css-ng1t4o {{width: 14rem;}}
+#       section[data-testid="stSidebar"] .css-1d391kg {{width: 14rem;}}
+#    </style>
+#    ''',
+#    unsafe_allow_html=True
+# )
 
-### ===== Monthly accounting ===== ###
+
+# ================== #
+# Monthly accounting #
+# ================== #
 st.header(HDR_NET, anchor=hdr_to_id[HDR_NET])
 st.markdown(':construction: :construction_worker: :construction:')
 
 
-### ===== Spending ===== ###
+# ======== #
+# Spending #
+# ======== #
 st.header(HDR_OUT, anchor=hdr_to_id[HDR_OUT])
 df_raw = get_google_sheet(id=SHEET_ID, name=SHEET_NAME)
 ym_list = df_raw[C.COL_YM].dropna().unique().tolist()
@@ -75,17 +98,17 @@ ym_idx_end = num_months_total - 1
 ym_idx_start = max(ym_idx_end - 2, 0)
 
 
-column_monthly_left, column_monthly_right = st.columns(2)
-
-# monthly total
-with column_monthly_left:
-   st.markdown('### 攏總')
-   df_monthly_total = df_raw.groupby(
-      by=C.COL_YM,
-      as_index=False
-   )[C.COL_AMOUNT].agg('sum')
-   max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
-   fig_monthly_total = go.Figure(go.Scatter(
+# === Monthly summary === #
+st.subheader('攏總')
+df_monthly_total = df_raw.groupby(
+   by=C.COL_YM,
+   as_index=False
+)[C.COL_AMOUNT].agg('sum')
+max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
+fig_monthly_total = go.Figure()
+is_by_group = st.checkbox(label='分組')
+if not is_by_group:
+   fig_monthly_total.add_trace(go.Scatter(
       name=C.COL_AMOUNT,
       mode='markers',
       x=df_monthly_total[C.COL_YM],
@@ -95,7 +118,7 @@ with column_monthly_left:
       )
    ))
    fig_monthly_total.add_trace(go.Scatter(
-      name='平均',
+      name='三個月平均',
       mode='lines',
       x=df_monthly_total[C.COL_YM],
       y=df_monthly_total[C.COL_AMOUNT].rolling(3, min_periods=1).mean(),
@@ -103,50 +126,33 @@ with column_monthly_left:
          width=6
       )
    ))
-   fig_monthly_total.update_yaxes(
-      title_text='萬',
-      gridwidth=0.1,
-      tickmode='array',
-      tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
-      ticktext=list(range(max_amount_in_ban7 + 1)),
-      tickfont_size=FONT_SIZE_TICK,
-      tickwidth=10
-   )
-   fig_monthly_total.update_xaxes(
-      title_text=C.COL_YM,
-      showgrid=False,
-      tickfont_size=FONT_SIZE_TICK
-   )
-   st.plotly_chart(fig_monthly_total, use_container_width=True)
-
-
-# each month by group
-with column_monthly_right:
-   st.markdown('### 逐月分組')
-   fig_all_months = px.histogram(
+else:
+   fig_monthly_total = px.histogram(
       data_frame=df_raw,
       x=C.COL_YM,
       y=C.COL_AMOUNT,
       color=col_group,
       color_discrete_map=get_color_map(col_group)
    )
-   fig_all_months.update_yaxes(
-      title_text='萬',
-      gridwidth=0.1,
-      tickmode='array',
-      tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
-      ticktext=list(range(max_amount_in_ban7 + 1)),
-      tickfont_size=FONT_SIZE_TICK,
-      tickwidth=10
-   )
-   fig_all_months.update_xaxes(
-      tickfont_size=FONT_SIZE_TICK
-   )
-   st.plotly_chart(fig_all_months, use_container_width=True)
+fig_monthly_total.update_xaxes(
+   title_text=C.COL_YM,
+   showgrid=False,
+   tickfont_size=FONT_SIZE_TICK
+)
+fig_monthly_total.update_yaxes(
+   title_text='萬',
+   gridwidth=0.1,
+   tickmode='array',
+   tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
+   ticktext=list(range(max_amount_in_ban7 + 1)),
+   tickfont_size=FONT_SIZE_TICK,
+   tickwidth=10
+)
+st.plotly_chart(fig_monthly_total, use_container_width=True)
 
 
-# recent few months by group
-st.markdown('### 最近')
+# === Recent months === #
+st.subheader('最近')
 ym_start, ym_end = st.select_slider(
    label='範圍',
    options=ym_list,
@@ -159,7 +165,9 @@ num_months_focus = ym_idx_end - ym_idx_start + 1
 ym_indices = list(range(ym_idx_start, (ym_idx_end + 1)))
 fig_subtitles = [
    f'<b>{ym}</b><br>${total}'
-   for ym, total in zip(df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT])
+   for ym, total in zip(
+      df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT]
+   )
 ]
 fig_recent_months = make_subplots(
    rows=1, cols=num_months_focus,
@@ -203,8 +211,8 @@ fig_recent_months.update_layout(
 st.plotly_chart(fig_recent_months, use_container_width=True)
 
 
-# monthly detail
-st.markdown('### 孤月')
+# === Single month === #
+st.subheader('孤月')
 ym_target = st.select_slider(
    label=C.COL_YM,
    options=ym_list,
@@ -259,7 +267,7 @@ fig_target_month.update_layout(
 st.plotly_chart(fig_target_month, use_container_width=True)
 
 
-# customized query
+# === Customized query === #
 ex_group = df_by_group[col_group][0]
 query = st.text_input(
    label='家己揣',
@@ -267,4 +275,6 @@ query = st.text_input(
 )
 df_result = df_raw.query(query)
 if not df_result.empty:
-   st.table(df_result.drop(columns=[col_group]))
+   st.table(df_result.drop(
+      columns=[col for col in C.COLS_TYPE if col != col_group])
+   )
