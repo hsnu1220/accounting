@@ -82,7 +82,12 @@ df_raw.loc[df_raw[C.COL_TAG] == '', C.COL_TAG] = (
 ).transform(store_to_tag)
 df_raw[C.COL_CLASS] = df_raw[C.COL_TAG].transform(tag_to_class)
 df_raw[C.COL_FREQ] = df_raw[C.COL_FREQ].replace('', C.FREQ_ONCE)
-df_raw.sort_values(by=[C.COL_MM, C.COL_DD], inplace=True)
+# [Todo]
+df_raw.sort_values(
+   by=[C.COL_MM, C.COL_DD],
+   inplace=True,
+   ignore_index=True
+)
 
 
 # === Monthly summary === #
