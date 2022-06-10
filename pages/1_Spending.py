@@ -1,25 +1,26 @@
 import streamlit as st
-# import pandas as pd
+import pandas as pd
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
 from plotly import express as px
 import consts as C
-from utils import get_google_sheet
+from utils import (
+   get_df_cash,
+   get_df_ctbc,
+   get_df_citi,
+   parse_spending_from_ctbc,
+   trim_store,
+   store_to_tag,
+   tag_to_class
+)
 import math
 
 
 # ================ #
 # Global variables #
 # ================ #
-HDR_OUT = '支出'
-HDR_NET = '滿月記帳表'
-
-hdr_to_id = dict()
-hdr_to_id[HDR_OUT] = 'spending'
-hdr_to_id[HDR_NET] = 'accounting'
-
-SHEET_ID = '1-wag8UYLCjzHL-kzvc81TwAOunPTVK01Cq3ZsO5ukck'
-SHEET_NAME = '總表'
+SHEET_ID_CASH = '1DNvY54rC1IaExN-xgnMYW3ru5lNXv0RjbqswakcGQh8'
+SHEET_ID_CARD_CITI = '1_eIEiaS6IiKqTIrSVUaNqd5jtjO2M9IWa2zsPIOsYpQ'
 
 COL_PCT = '比例'
 HUES = px.colors.qualitative.Set3
@@ -44,74 +45,64 @@ def get_color_map(group=C.COL_CLASS):
 # Page config #
 # =========== #
 st.set_page_config(
-   page_title='布基帳',
-   page_icon=':whale:',
+   page_title=C.PAGE_TITLE,
+   page_icon=C.PAGE_ICON,
    layout='wide',
    initial_sidebar_state='collapsed'
 )
 
 
-# ======= #
-# Sidebar #
-# ======= #
-st.sidebar.markdown(
-   f"""
-   ## 目錄
-   - [{HDR_NET}](#{hdr_to_id[HDR_NET]})
-   - [{HDR_OUT}](#{hdr_to_id[HDR_OUT]})
-   """,
-   unsafe_allow_html=True
-)
-st.sidebar.header('分組')
-col_group = st.sidebar.radio(
-   label='照',
-   options=[C.COL_CLASS, C.COL_PAY, C.COL_FREQ],
-)
-
-# === Adjust sidebar width === #
-# st.markdown(
-#    f'''
-#    <style>
-#       section[data-testid="stSidebar"] .css-ng1t4o {{width: 14rem;}}
-#       section[data-testid="stSidebar"] .css-1d391kg {{width: 14rem;}}
-#    </style>
-#    ''',
-#    unsafe_allow_html=True
-# )
-
-
-# ================== #
-# Monthly accounting #
-# ================== #
-st.header(HDR_NET, anchor=hdr_to_id[HDR_NET])
-st.markdown(':construction: :construction_worker: :construction:')
-
-
 # ======== #
 # Spending #
 # ======== #
-st.header(HDR_OUT, anchor=hdr_to_id[HDR_OUT])
-df_raw = get_google_sheet(id=SHEET_ID, name=SHEET_NAME)
-ym_list = df_raw[C.COL_YM].dropna().unique().tolist()
-num_months_total = len(ym_list)
-ym_idx_end = num_months_total - 1
-ym_idx_start = max(ym_idx_end - 2, 0)
+st.header('開')
+df_raw = pd.DataFrame()
+
+# === Cash === #
+df_cash = get_df_cash(SHEET_ID_CASH)
+df_raw = df_raw.append(df_cash, ignore_index=True)
+
+# === Bank === #
+df_ctbc = get_df_ctbc(C.SHEET_ID_BANK_CTBC, ['2022'])
+df_ctbc_spending = parse_spending_from_ctbc(df_ctbc)
+df_raw = df_raw.append(df_ctbc_spending, ignore_index=True)
+
+# === Credit card === #
+df_citi = get_df_citi(SHEET_ID_CARD_CITI, ['2022'])
+df_raw = df_raw.append(df_citi, ignore_index=True)
+
+# === Infer tag, class, freq === #
+df_raw[C.COL_DD] = df_raw[C.COL_DD].astype('int32')
+df_raw[C.COL_STORE] = df_raw[C.COL_STORE].transform(trim_store)
+df_raw[C.COL_AMOUNT] = df_raw[C.COL_AMOUNT].astype('int32')
+df_raw.loc[df_raw[C.COL_ITEM].str.contains('儲值'), C.COL_FREQ] = C.FREQ_TOPUP
+
+df_raw.loc[df_raw[C.COL_TAG] == '', C.COL_TAG] = (
+   df_raw.loc[df_raw[C.COL_TAG] == '', C.COL_STORE]
+).transform(store_to_tag)
+df_raw[C.COL_CLASS] = df_raw[C.COL_TAG].transform(tag_to_class)
+df_raw[C.COL_FREQ] = df_raw[C.COL_FREQ].replace('', C.FREQ_ONCE)
+df_raw.sort_values(by=[C.COL_MM, C.COL_DD], inplace=True)
 
 
 # === Monthly summary === #
 st.subheader('攏總')
 df_monthly_total = df_raw.groupby(
-   by=C.COL_YM,
+   by=C.COL_MM,
    as_index=False
 )[C.COL_AMOUNT].agg('sum')
 max_amount_in_ban7 = math.ceil(df_monthly_total[C.COL_AMOUNT].max() / 1E4)
 fig_monthly_total = go.Figure()
 is_by_group = st.checkbox(label='分組')
+col_group = st.selectbox(
+   label='照',
+   options=[C.COL_CLASS, C.COL_FREQ, C.COL_PAY],
+)
 if not is_by_group:
    fig_monthly_total.add_trace(go.Scatter(
       name=C.COL_AMOUNT,
       mode='markers',
-      x=df_monthly_total[C.COL_YM],
+      x=df_monthly_total[C.COL_MM],
       y=df_monthly_total[C.COL_AMOUNT],
       marker=dict(
          size=16
@@ -120,7 +111,7 @@ if not is_by_group:
    fig_monthly_total.add_trace(go.Scatter(
       name='三個月平均',
       mode='lines',
-      x=df_monthly_total[C.COL_YM],
+      x=df_monthly_total[C.COL_MM],
       y=df_monthly_total[C.COL_AMOUNT].rolling(3, min_periods=1).mean(),
       line=dict(
          width=6
@@ -129,13 +120,13 @@ if not is_by_group:
 else:
    fig_monthly_total = px.histogram(
       data_frame=df_raw,
-      x=C.COL_YM,
+      x=C.COL_MM,
       y=C.COL_AMOUNT,
       color=col_group,
       color_discrete_map=get_color_map(col_group)
    )
 fig_monthly_total.update_xaxes(
-   title_text=C.COL_YM,
+   title_text=C.COL_MM,
    showgrid=False,
    tickfont_size=FONT_SIZE_TICK
 )
@@ -153,6 +144,11 @@ st.plotly_chart(fig_monthly_total, use_container_width=True)
 
 # === Recent months === #
 st.subheader('最近')
+ym_list = df_raw[C.COL_MM].dropna().unique().tolist()
+num_months_total = len(ym_list)
+ym_idx_end = num_months_total - 1
+ym_idx_start = max(ym_idx_end - 2, 0)
+
 ym_start, ym_end = st.select_slider(
    label='範圍',
    options=ym_list,
@@ -166,7 +162,7 @@ ym_indices = list(range(ym_idx_start, (ym_idx_end + 1)))
 fig_subtitles = [
    f'<b>{ym}</b><br>${total}'
    for ym, total in zip(
-      df_monthly_total[C.COL_YM], df_monthly_total[C.COL_AMOUNT]
+      df_monthly_total[C.COL_MM], df_monthly_total[C.COL_AMOUNT]
    )
 ]
 fig_recent_months = make_subplots(
@@ -175,7 +171,7 @@ fig_recent_months = make_subplots(
    subplot_titles=[fig_subtitles[idx] for idx in ym_indices]
 )
 for col_idx, ym_idx in enumerate(ym_indices):
-   df_curr_month = df_raw.query(f"{C.COL_YM} == '{ym_list[ym_idx]}'")
+   df_curr_month = df_raw.query(f"{C.COL_MM} == '{ym_list[ym_idx]}'")
    df_by_group = df_curr_month.groupby(
       by=col_group,
       as_index=False
@@ -214,11 +210,11 @@ st.plotly_chart(fig_recent_months, use_container_width=True)
 # === Single month === #
 st.subheader('孤月')
 ym_target = st.select_slider(
-   label=C.COL_YM,
+   label=C.COL_MM,
    options=ym_list,
    value=ym_list[ym_idx_end]
 )
-df_target_month = df_raw.query(f'{C.COL_YM} == @ym_target')
+df_target_month = df_raw.query(f'{C.COL_MM} == @ym_target')
 df_by_group = df_target_month.groupby(
    by=col_group,
    as_index=False
@@ -271,7 +267,7 @@ st.plotly_chart(fig_target_month, use_container_width=True)
 ex_group = df_by_group[col_group][0]
 query = st.text_input(
    label='家己揣',
-   value=f"{C.COL_YM} == '{ym_target}' & {col_group} == '{ex_group}'"
+   value=f"{C.COL_MM} == '{ym_target}' & {col_group} == '{ex_group}'"
 )
 df_result = df_raw.query(query)
 if not df_result.empty:

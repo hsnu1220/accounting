@@ -4,38 +4,216 @@ import pandas as pd
 import consts as C
 
 
+
+# =============== #
+# Private helpers #
+# =============== #
+def load_df_from_url(url, cols):
+   content = requests.get(url).content
+   df = pd.DataFrame()
+   df = pd.read_csv(
+      io.StringIO(content.decode('utf-8')),
+      usecols=cols
+   ).fillna(value='')
+   return df
+
+
+def rm_substr(s, kw, to_char=''):
+   return s.replace(kw, to_char)
+
+
+def rm_comma(s):
+   return rm_substr(s, ',')
+
+
+def rm_float(s):
+   return rm_substr(s, '.00')
+
+
+def is_credit_bill(s):
+   return any(kw in s for kw in ['花旗銀行信用卡', '阿魚', '台新', '國泰', '渣打'])
+
+
+# ============== #
+# Public helpers #
+# ============== #
+def trim_store(s):
+   for kw_sym in ('－', '０'):
+      s = rm_substr(s, kw_sym)
+   for kw_loc in (
+      '台灣',
+      'TW',
+      'TAIPEI',
+      'Taipei',
+      'CITY',
+      'City',
+      'HSINCHU',
+      'YUANLIN',
+      'YUNLIN',
+      'TAICHUNG',
+      'KAOHSIUNG',
+      'PINGTUNG',
+      'Pingtung',
+      'TAITUNG',
+      'HUALIEN'
+   ):
+      s = rm_substr(s, kw_loc)
+   for kw_store in (
+      '股份有限',
+      '時尚廣場',
+      '便利商',
+      '實業',
+      '公司',
+      '餐廳',
+      '生活',
+      '百貨',
+      '超商',
+      '藥妝',
+      '門巿'
+   ):
+      s = rm_substr(s, kw_store)
+   for kw_else in ('電支', '網路／語', 'Ｕｎｏｃｈ', 'ＭＯＳ', '（Ｄ２', '不抵用五倍券'):
+      s = rm_substr(s, kw_else)
+   return s.strip()
+
+
+# ======= #
+# Mapping #
+# ======= #
+def store_to_tag(s):
+   if any(kw in s for kw in ['大台北瓦斯', '中華電信', '台哥大']):
+      return C.TAG_BILL
+   elif any(kw in s for kw in ['必勝客']):
+      return C.TAG_FAMILY
+   elif any(kw in s for kw in ['宜家家居', '宜得利']):
+      return C.TAG_FURNISH
+   elif any(kw in s for kw in ['日藥本舖', '康是美', '金興發', '大創', '寶雅']):
+      return C.TAG_CONSUMABLE
+   elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯']):
+      return C.TAG_MARKET
+   elif any(
+      kw in s for kw in ['川川川川', '麥味登', '麥當勞', '休息站', '早點', '摩斯', '統一', '全家']
+   ):
+      return C.TAG_FORAGE
+   elif any(kw in s for kw in ['約翰紅茶', '萊爾富', '星巴克', '清心', '烏弄']):
+      return C.TAG_DRINK
+   elif any(kw in s for kw in ['國家表演藝術中心', 'ＫＫＴＩＸ', '威秀', '秀泰']):
+      return C.TAG_SHOW
+   elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特']):
+      return C.TAG_EXERCISE
+   elif any(kw in s for kw in ['悠遊付']):
+      return C.TAG_COMMUTE
+   elif any(kw in s for kw in ['大都會衛星']):
+      return C.TAG_TAXI
+   else:
+      return C.TAG_DEFAULT
+
+
 def tag_to_class(tag):
-   if tag in ['蹛', '水電', '厝內']:
+   if tag in C.TAGS_RENT:
       return C.CLS_RENT
-   elif tag in ['家具', '度日', '植物', '穿插', '梳妝']:
+   elif tag in C.TAGS_LIFE:
       return C.CLS_LIFE
-   elif tag in ['菜市', '超市', '做麭']:
+   elif tag in C.TAGS_COOK:
       return C.CLS_COOK
-   elif tag in ['好料', '四秀', '食涼']:
+   elif tag in C.TAGS_DINE:
       return C.CLS_DINE
-   elif tag in ['冊', '票', '麻雀', '網影', '順紲']:
+   elif tag in C.TAGS_FUN:
       return C.CLS_FUN
-   elif tag in ['保健', '運動']:
+   elif tag in C.TAGS_HEALTH:
       return C.CLS_HEALTH
-   elif tag in ['駛車', '騎車', '通勤', '坐車']:
+   elif tag in C.TAGS_MOVE:
       return C.CLS_MOVE
    else:
       return C.CLS_DEFAULT
 
 
+# ==== #
+# Cash #
+# ==== #
 # @st.cache(suppress_st_warning=True)
-def get_google_sheet(id, name):
-   end_point = 'https://docs.google.com/spreadsheets/d'
-   url = f'{end_point}/{id}/gviz/tq?tqx=out:csv&sheet={name}'
-   content = requests.get(url).content
+def get_df_cash(sheet_id, tables=C.YY_LIST):
+   df = pd.DataFrame()
+   for yy in tables:
+      df_year = load_df_from_url(
+         f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
+         C.COLS_SHEET_CASH
+      )
+      df_year[C.COL_MM] = df_year[C.COL_MM].transform(
+         lambda mm: f'{yy}/{mm:02d}'
+      )
+      df = df.append(df_year, ignore_index=True)
 
-   df = pd.read_csv(
-      io.StringIO(content.decode('utf-8')),
-      usecols=C.COLS_GOOGLE_SHEET
-   ).fillna(value='')
-   df[C.COL_AMOUNT] = df[C.COL_AMOUNT].astype('int32')
-   df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_DEFAULT)
-   df[C.COL_FREQ] = df[C.COL_FREQ].replace('', C.FREQ_DEFAULT)
-   df[C.COL_CLASS] = df[C.COL_TAG].transform(tag_to_class)
+   df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_CASH)
+   return df
+
+
+# ==== #
+# Bank #
+# ==== #
+def get_df_ctbc(sheet_id, tables=C.YY_LIST):
+   df = pd.DataFrame()
+   for yy in tables:
+      df_bill = load_df_from_url(
+         f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
+         C.COLS_SHEET_CTBC,
+      )
+      df = df.append(df_bill, ignore_index=True)
+
+   df[C.COL_MM] = df[C.COL_DATE_CTBC].transform(
+      lambda s: '/'.join(s.split('/')[:-1])
+   )
+   df[C.COL_DD] = df[C.COL_DATE_CTBC].str.split('/').transform(
+      lambda arr: arr[-1]
+   )
+   df.drop(columns=[C.COL_DATE_CTBC], inplace=True)
+   for col in (C.COL_AMOUNT, C.COL_DEPOSIT):
+      df[col] = df[col].transform(rm_comma)
+
+   return df
+
+
+def parse_spending_from_ctbc(df):
+   df.drop(columns=[C.COL_DEPOSIT], inplace=True)
+   df = df[df[C.COL_AMOUNT] != '']
+   df = df[df[C.COL_STORE] != 'ＡＴＭ']
+   
+   df = df[~df[C.COL_ITEM].transform(is_credit_bill)]
+   for kw, tag in zip(['孝親', '房租'], [C.TAG_FAMILY, C.TAG_SLEEP]):
+      df.loc[
+         df[C.COL_ITEM].str.contains(kw),
+         [C.COL_TAG, C.COL_FREQ]
+      ] = tag, C.FREQ_MONTH
+   df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_DIGIT)
+
+   return df
+
+
+# =========== #
+# Credit card #
+# =========== #
+def get_df_citi(sheet_id, tables=C.YY_LIST):
+   df = pd.DataFrame()
+   for yy in tables:
+      df_bill = load_df_from_url(
+         f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
+         C.COLS_SHEET_CITI,
+      )
+      df = df.append(df_bill, ignore_index=True)
+
+   df[C.COL_MM] = df[C.COL_DATE_CITI].transform(
+      lambda s: '/'.join(s.split('/')[::-1][:-1])
+   )
+   df[C.COL_DD] = df[C.COL_DATE_CITI].str.split('/').transform(
+      lambda arr: arr[0]
+   )
+   df.drop(columns=[C.COL_DATE_CITI], inplace=True)
+   df[C.COL_ITEM] = ''
+   df = df[~df[C.COL_AMOUNT].str.startswith('-')]
+   df[C.COL_AMOUNT] = df[C.COL_AMOUNT].transform(rm_float).transform(rm_comma)
+   # 連加：Line Pay
+   for kw in ('街口', '連加'):
+      df.loc[df[C.COL_STORE].str.contains(kw), C.COL_PAY] = C.PAY_DIGIT
+   df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_CARD)
 
    return df
