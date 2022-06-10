@@ -177,7 +177,7 @@ def parse_spending_from_ctbc(df):
    df.drop(columns=[C.COL_DEPOSIT], inplace=True)
    df = df[df[C.COL_AMOUNT] != '']
    df = df[df[C.COL_STORE] != 'ＡＴＭ']
-   
+
    df = df[~df[C.COL_ITEM].transform(is_credit_bill)]
    for kw, tag in zip(['孝親', '房租'], [C.TAG_FAMILY, C.TAG_SLEEP]):
       df.loc[
@@ -208,7 +208,6 @@ def get_df_citi(sheet_id, tables=C.YY_LIST):
       lambda arr: arr[0]
    )
    df.drop(columns=[C.COL_DATE_CITI], inplace=True)
-   df[C.COL_ITEM] = ''
    df = df[~df[C.COL_AMOUNT].str.startswith('-')]
    df[C.COL_AMOUNT] = df[C.COL_AMOUNT].transform(rm_float).transform(rm_comma)
    # 連加：Line Pay
