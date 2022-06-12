@@ -244,9 +244,10 @@ def get_df_tsib(sheet_id, tables=C.YY_LIST):
       )
       df = df.append(df_year, ignore_index=True)
 
-   df[
-      [C.COL_YY, C.COL_MM, C.COL_DD]
-   ] = df[C.COL_DATE].str.split('/', expand=True)
+   df[[C.COL_YY, C.COL_MM, C.COL_DD]] = df[C.COL_DATE].str.split(
+      '/',
+      expand=True
+   )
    df[C.COL_MM] = df[C.COL_MM].transform(lambda mm: f'{mm:0>2}')
    df[C.COL_MM] = df[C.COL_YY] + '/' + df[C.COL_MM]
    df.drop(columns=[C.COL_DATE, C.COL_YY], inplace=True)
