@@ -38,7 +38,7 @@ def is_credit_bill(s):
 # Public helpers #
 # ============== #
 def trim_store(s):
-   for kw_sym in ('－', '０'):
+   for kw_sym in ('－', '０', '/'):
       s = rm_substr(s, kw_sym)
    for kw_loc in (
       '台灣',
@@ -91,17 +91,34 @@ def store_to_tag(s):
       return C.TAG_CONSUMABLE
    elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯']):
       return C.TAG_MARKET
-   elif any(
-      kw in s for kw in ['川川川川', '麥味登', '麥當勞', '休息站', '早點', '摩斯', '統一', '全家']
-   ):
+   elif any(kw in s for kw in [
+      'ｆｏｏｄｐａｎｄａ',
+      '川川川川',
+      '麥味登',
+      '麥當勞',
+      '休息站',
+      '早點',
+      '摩斯',
+      '統一',
+      '全家',
+      'ＯＫ'
+   ]):
       return C.TAG_FORAGE
-   elif any(kw in s for kw in ['約翰紅茶', '萊爾富', '星巴克', '清心', '烏弄']):
+   elif any(kw in s for kw in [
+      '約翰紅茶',
+      '萊爾富',
+      '茶湯會',
+      '星巴克',
+      '清心',
+      '烏弄',
+      '山焙'
+   ]):
       return C.TAG_DRINK
    elif any(kw in s for kw in ['國家表演藝術中心', 'ＫＫＴＩＸ', '威秀', '秀泰']):
       return C.TAG_SHOW
    elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特']):
       return C.TAG_EXERCISE
-   elif any(kw in s for kw in ['悠遊付']):
+   elif any(kw in s for kw in ['悠遊付', '悠遊卡']):
       return C.TAG_COMMUTE
    elif any(kw in s for kw in ['大都會衛星']):
       return C.TAG_TAXI
@@ -154,19 +171,19 @@ def get_df_cash(sheet_id, tables=C.YY_LIST):
 def get_df_ctbc(sheet_id, tables=C.YY_LIST):
    df = pd.DataFrame()
    for yy in tables:
-      df_bill = load_df_from_url(
+      df_year = load_df_from_url(
          f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
          C.COLS_SHEET_CTBC,
       )
-      df = df.append(df_bill, ignore_index=True)
+      df = df.append(df_year, ignore_index=True)
 
-   df[C.COL_MM] = df[C.COL_DATE_CTBC].transform(
+   df[C.COL_MM] = df[C.COL_DATE].transform(
       lambda s: '/'.join(s.split('/')[:-1])
    )
-   df[C.COL_DD] = df[C.COL_DATE_CTBC].str.split('/').transform(
+   df[C.COL_DD] = df[C.COL_DATE].str.split('/').transform(
       lambda arr: arr[-1]
    )
-   df.drop(columns=[C.COL_DATE_CTBC], inplace=True)
+   df.drop(columns=[C.COL_DATE], inplace=True)
    for col in (C.COL_AMOUNT, C.COL_DEPOSIT):
       df[col] = df[col].transform(rm_comma)
 
@@ -195,24 +212,43 @@ def parse_spending_from_ctbc(df):
 def get_df_citi(sheet_id, tables=C.YY_LIST):
    df = pd.DataFrame()
    for yy in tables:
-      df_bill = load_df_from_url(
+      df_year = load_df_from_url(
          f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
          C.COLS_SHEET_CITI,
       )
-      df = df.append(df_bill, ignore_index=True)
+      df = df.append(df_year, ignore_index=True)
 
-   df[C.COL_MM] = df[C.COL_DATE_CITI].transform(
+   df[C.COL_MM] = df[C.COL_DATE].transform(
       lambda s: '/'.join(s.split('/')[::-1][:-1])
    )
-   df[C.COL_DD] = df[C.COL_DATE_CITI].str.split('/').transform(
+   df[C.COL_DD] = df[C.COL_DATE].str.split('/').transform(
       lambda arr: arr[0]
    )
-   df.drop(columns=[C.COL_DATE_CITI], inplace=True)
+   df.drop(columns=[C.COL_DATE], inplace=True)
    df = df[~df[C.COL_AMOUNT].str.startswith('-')]
    df[C.COL_AMOUNT] = df[C.COL_AMOUNT].transform(rm_float).transform(rm_comma)
    # 連加：Line Pay
    for kw in ('街口', '連加'):
       df.loc[df[C.COL_STORE].str.contains(kw), C.COL_PAY] = C.PAY_DIGIT
    df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_CARD)
+
+   return df
+
+
+def get_df_tsib(sheet_id, tables=C.YY_LIST):
+   df = pd.DataFrame()
+   for yy in tables:
+      df_year = load_df_from_url(
+         f'{C.END_POINT}/{sheet_id}/gviz/tq?tqx=out:csv&sheet={yy}',
+         C.COLS_SHEET_TSIB,
+      )
+      df = df.append(df_year, ignore_index=True)
+
+   df[
+      [C.COL_YY, C.COL_MM, C.COL_DD]
+   ] = df[C.COL_DATE].str.split('/', expand=True)
+   df[C.COL_MM] = df[C.COL_MM].transform(lambda mm: f'{mm:0>2}')
+   df[C.COL_MM] = df[C.COL_YY] + '/' + df[C.COL_MM]
+   df.drop(columns=[C.COL_DATE, C.COL_YY], inplace=True)
 
    return df

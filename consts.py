@@ -16,6 +16,8 @@ YY_LIST = ['2021', '2022']
 # ======== #
 # Spending #
 # ======== #
+COL_DATE = '工'
+COL_YY = '年'
 COL_MM = '月'
 COL_DD = '日'
 COL_STORE = '店'
@@ -39,21 +41,22 @@ COLS_SHEET_CASH = [
 # ==== #
 # Bank #
 # ==== #
-COL_DATE_CTBC = '日期'
 COL_DEPOSIT = '存入'
 
 COLS_SHEET_CTBC = [
-   COL_DATE_CTBC, COL_AMOUNT, COL_DEPOSIT, COL_STORE, COL_ITEM,
+   COL_DATE, COL_AMOUNT, COL_DEPOSIT, COL_STORE, COL_ITEM
 ] + COLS_SPENDING
 
 
 # =========== #
 # Credit card #
 # =========== #
-COL_DATE_CITI = '交易日期'
-
 COLS_SHEET_CITI = [
-   COL_DATE_CITI, COL_STORE, COL_AMOUNT, COL_ITEM
+   COL_DATE, COL_STORE, COL_AMOUNT, COL_ITEM
+] + COLS_SPENDING
+
+COLS_SHEET_TSIB = [
+   COL_DATE, COL_STORE, COL_AMOUNT, COL_ITEM
 ] + COLS_SPENDING
 
 

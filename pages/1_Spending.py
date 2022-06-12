@@ -8,6 +8,7 @@ from utils import (
    get_df_cash,
    get_df_ctbc,
    get_df_citi,
+   get_df_tsib,
    parse_spending_from_ctbc,
    trim_store,
    store_to_tag,
@@ -21,6 +22,7 @@ import math
 # ================ #
 SHEET_ID_CASH = '1DNvY54rC1IaExN-xgnMYW3ru5lNXv0RjbqswakcGQh8'
 SHEET_ID_CARD_CITI = '1_eIEiaS6IiKqTIrSVUaNqd5jtjO2M9IWa2zsPIOsYpQ'
+SHEET_ID_CARD_TSIB = '1uM-1q8jDAgpPuyAdRVdWX97EXJAFmUkbtuXk8p0AqME'
 
 COL_PCT = '比例'
 HUES = px.colors.qualitative.Set3
@@ -56,34 +58,36 @@ st.set_page_config(
 # Spending #
 # ======== #
 st.header('開')
-df_raw = pd.DataFrame()
+df_out = pd.DataFrame()
 
 # === Cash === #
 df_cash = get_df_cash(SHEET_ID_CASH)
-df_raw = df_raw.append(df_cash, ignore_index=True)
+df_out = df_out.append(df_cash, ignore_index=True)
 
 # === Bank === #
 df_ctbc = get_df_ctbc(C.SHEET_ID_BANK_CTBC, ['2022'])
 df_ctbc_spending = parse_spending_from_ctbc(df_ctbc)
-df_raw = df_raw.append(df_ctbc_spending, ignore_index=True)
+df_out = df_out.append(df_ctbc_spending, ignore_index=True)
 
 # === Credit card === #
 df_citi = get_df_citi(SHEET_ID_CARD_CITI, ['2022'])
-df_raw = df_raw.append(df_citi, ignore_index=True)
+df_out = df_out.append(df_citi, ignore_index=True)
+
+df_tsib = get_df_tsib(SHEET_ID_CARD_TSIB, ['2022'])
+df_out = df_out.append(df_tsib, ignore_index=True)
 
 # === Infer tag, class, freq === #
-df_raw[C.COL_DD] = df_raw[C.COL_DD].astype('int32')
-df_raw[C.COL_STORE] = df_raw[C.COL_STORE].transform(trim_store)
-df_raw[C.COL_AMOUNT] = df_raw[C.COL_AMOUNT].astype('int32')
-df_raw.loc[df_raw[C.COL_ITEM].str.contains('儲值'), C.COL_FREQ] = C.FREQ_TOPUP
+df_out[C.COL_DD] = df_out[C.COL_DD].astype('int32')
+df_out[C.COL_STORE] = df_out[C.COL_STORE].transform(trim_store)
+df_out[C.COL_AMOUNT] = df_out[C.COL_AMOUNT].astype('int32')
+df_out.loc[df_out[C.COL_ITEM].str.contains('儲值'), C.COL_FREQ] = C.FREQ_TOPUP
 
-df_raw.loc[df_raw[C.COL_TAG] == '', C.COL_TAG] = (
-   df_raw.loc[df_raw[C.COL_TAG] == '', C.COL_STORE]
+df_out.loc[df_out[C.COL_TAG] == '', C.COL_TAG] = (
+   df_out.loc[df_out[C.COL_TAG] == '', C.COL_STORE]
 ).transform(store_to_tag)
-df_raw[C.COL_CLASS] = df_raw[C.COL_TAG].transform(tag_to_class)
-df_raw[C.COL_FREQ] = df_raw[C.COL_FREQ].replace('', C.FREQ_ONCE)
-# [Todo]
-df_raw.sort_values(
+df_out[C.COL_CLASS] = df_out[C.COL_TAG].transform(tag_to_class)
+df_out[C.COL_FREQ] = df_out[C.COL_FREQ].replace('', C.FREQ_ONCE)
+df_out.sort_values(
    by=[C.COL_MM, C.COL_DD],
    inplace=True,
    ignore_index=True
@@ -92,7 +96,7 @@ df_raw.sort_values(
 
 # === Monthly summary === #
 st.subheader('攏總')
-df_monthly_total = df_raw.groupby(
+df_monthly_total = df_out.groupby(
    by=C.COL_MM,
    as_index=False
 )[C.COL_AMOUNT].agg('sum')
@@ -124,7 +128,7 @@ if not is_by_group:
    ))
 else:
    fig_monthly_total = px.histogram(
-      data_frame=df_raw,
+      data_frame=df_out,
       x=C.COL_MM,
       y=C.COL_AMOUNT,
       color=col_group,
@@ -149,7 +153,7 @@ st.plotly_chart(fig_monthly_total, use_container_width=True)
 
 # === Recent months === #
 st.subheader('最近')
-ym_list = df_raw[C.COL_MM].dropna().unique().tolist()
+ym_list = df_out[C.COL_MM].dropna().unique().tolist()
 num_months_total = len(ym_list)
 ym_idx_end = num_months_total - 1
 ym_idx_start = max(ym_idx_end - 2, 0)
@@ -176,7 +180,7 @@ fig_recent_months = make_subplots(
    subplot_titles=[fig_subtitles[idx] for idx in ym_indices]
 )
 for col_idx, ym_idx in enumerate(ym_indices):
-   df_curr_month = df_raw.query(f"{C.COL_MM} == '{ym_list[ym_idx]}'")
+   df_curr_month = df_out.query(f"{C.COL_MM} == '{ym_list[ym_idx]}'")
    df_by_group = df_curr_month.groupby(
       by=col_group,
       as_index=False
@@ -219,7 +223,7 @@ ym_target = st.select_slider(
    options=ym_list,
    value=ym_list[ym_idx_end]
 )
-df_target_month = df_raw.query(f'{C.COL_MM} == @ym_target')
+df_target_month = df_out.query(f'{C.COL_MM} == @ym_target')
 df_by_group = df_target_month.groupby(
    by=col_group,
    as_index=False
@@ -274,7 +278,7 @@ query = st.text_input(
    label='家己揣',
    value=f"{C.COL_MM} == '{ym_target}' & {col_group} == '{ex_group}'"
 )
-df_result = df_raw.query(query)
+df_result = df_out.query(query)
 if not df_result.empty:
    st.table(df_result.drop(
       columns=[col for col in C.COLS_TYPE if col != col_group])
