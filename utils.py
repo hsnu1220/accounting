@@ -61,6 +61,7 @@ def trim_store(s):
    for kw_store in (
       '股份有限',
       '時尚廣場',
+      '財團法人',
       '便利商',
       '實業',
       '公司',
@@ -93,13 +94,17 @@ def store_to_tag(s):
       return C.TAG_MARKET
    elif any(kw in s for kw in [
       'ｆｏｏｄｐａｎｄａ',
+      '好想見麵',
       '川川川川',
       '麥味登',
+      '龍涎居',
       '麥當勞',
       '休息站',
       '早點',
+      '胡饕',
       '摩斯',
       '統一',
+      '誠記',
       '全家',
       'ＯＫ'
    ]):
@@ -108,17 +113,27 @@ def store_to_tag(s):
       '約翰紅茶',
       '萊爾富',
       '茶湯會',
+      '康青龍',
       '星巴克',
       '清心',
       '烏弄',
-      '山焙'
+      '山焙',
+      '５嵐'
    ]):
       return C.TAG_DRINK
-   elif any(kw in s for kw in ['國家表演藝術中心', 'ＫＫＴＩＸ', '威秀', '秀泰']):
+   elif any(kw in s for kw in [
+      '國家表演藝術中心',
+      '臺北表演藝術中心',
+      '融藝',
+      'ｕｄｎ售票',
+      'ＫＫＴＩＸ',
+      '威秀',
+      '秀泰'
+   ]):
       return C.TAG_SHOW
    elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特']):
       return C.TAG_EXERCISE
-   elif any(kw in s for kw in ['悠遊付', '悠遊卡']):
+   elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡']):
       return C.TAG_COMMUTE
    elif any(kw in s for kw in ['大都會衛星']):
       return C.TAG_TAXI
