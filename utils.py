@@ -138,7 +138,7 @@ def store_to_tag(s):
       return C.TAG_EXERCISE
    elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡', 'Ｇｏ Ｓｈａｒｅ']):
       return C.TAG_COMMUTE
-   elif any(kw in s for kw in ['大都會衛星']):
+   elif any(kw in s for kw in ['計程車', '大都會衛星']):
       return C.TAG_TAXI
    else:
       return C.TAG_DEFAULT
