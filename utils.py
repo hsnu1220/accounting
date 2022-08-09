@@ -38,7 +38,7 @@ def is_credit_bill(s):
 # Public helpers #
 # ============== #
 def trim_store(s):
-   for kw_sym in ('－', '０', '/'):
+   for kw_sym in ('－', '０', '/', '＊'):
       s = rm_substr(s, kw_sym)
    for kw_loc in (
       '台灣',
@@ -82,7 +82,7 @@ def trim_store(s):
 # Mapping #
 # ======= #
 def store_to_tag(s):
-   if any(kw in s for kw in ['大台北瓦斯', '中華電信', '台哥大']):
+   if any(kw in s for kw in ['瓦斯', '中華電信', '台哥大']):
       return C.TAG_BILL
    elif any(kw in s for kw in ['必勝客']):
       return C.TAG_FAMILY
@@ -94,8 +94,10 @@ def store_to_tag(s):
       return C.TAG_MARKET
    elif any(kw in s for kw in [
       'ｆｏｏｄｐａｎｄａ',
-      '好想見麵',
+      '誠品信義店',
       '川川川川',
+      '春秋大滷',
+      '好想見麵',
       '麥味登',
       '龍涎居',
       '麥當勞',
@@ -106,6 +108,7 @@ def store_to_tag(s):
       '統一',
       '誠記',
       '全家',
+      '素食',
       'ＯＫ'
    ]):
       return C.TAG_FORAGE
@@ -133,7 +136,7 @@ def store_to_tag(s):
       return C.TAG_SHOW
    elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特']):
       return C.TAG_EXERCISE
-   elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡']):
+   elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡', 'Ｇｏ Ｓｈａｒｅ']):
       return C.TAG_COMMUTE
    elif any(kw in s for kw in ['大都會衛星']):
       return C.TAG_TAXI
