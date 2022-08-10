@@ -38,7 +38,7 @@ def is_credit_bill(s):
 # Public helpers #
 # ============== #
 def trim_store(s):
-   for kw_sym in ('－', '０', '/', '＊'):
+   for kw_sym in ('－', '０', '/', '＊', '＆'):
       s = rm_substr(s, kw_sym)
    for kw_loc in (
       '台灣',
@@ -73,7 +73,15 @@ def trim_store(s):
       '門巿'
    ):
       s = rm_substr(s, kw_store)
-   for kw_else in ('電支', '網路／語', 'Ｕｎｏｃｈ', 'ＭＯＳ', '（Ｄ２', '不抵用五倍券'):
+   for kw_else in (
+      'Ｕｎｏｃｈ',
+      'ＭＯＳ',
+      '（Ｄ２',
+      '＆ｂ',
+      '不抵用五倍券',
+      '網路／語',
+      '電支'
+   ):
       s = rm_substr(s, kw_else)
    return s.strip()
 
@@ -269,5 +277,9 @@ def get_df_tsib(sheet_id, tables=C.YY_LIST):
    df[C.COL_MM] = df[C.COL_MM].transform(lambda mm: f'{mm:0>2}')
    df[C.COL_MM] = df[C.COL_YY] + '/' + df[C.COL_MM]
    df.drop(columns=[C.COL_DATE, C.COL_YY], inplace=True)
+   # 連加：Line Pay
+   for kw in ('街口', '連加'):
+      df.loc[df[C.COL_STORE].str.contains(kw), C.COL_PAY] = C.PAY_DIGIT
+   df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_CARD)
 
    return df
