@@ -1,8 +1,9 @@
 import streamlit as st
+import math
 import pandas as pd
 from plotly import graph_objects as go
-from plotly.subplots import make_subplots
 from plotly import express as px
+from plotly.subplots import make_subplots
 import consts as C
 from utils import (
    get_df_cash,
@@ -12,35 +13,9 @@ from utils import (
    parse_spending_from_ctbc,
    trim_store,
    store_to_tag,
-   tag_to_class
+   tag_to_class,
+   get_color_map
 )
-import math
-
-
-# ================ #
-# Global variables #
-# ================ #
-SHEET_ID_CASH = '1DNvY54rC1IaExN-xgnMYW3ru5lNXv0RjbqswakcGQh8'
-SHEET_ID_CARD_CITI = '1_eIEiaS6IiKqTIrSVUaNqd5jtjO2M9IWa2zsPIOsYpQ'
-SHEET_ID_CARD_TSIB = '1uM-1q8jDAgpPuyAdRVdWX97EXJAFmUkbtuXk8p0AqME'
-
-COL_PCT = '比例'
-HUES = px.colors.qualitative.Set3
-FONT_SIZE_TICK = 16
-FONT_SIZE_TEXT = 20
-FONT_SIZE_HOVER = 16
-
-
-# ================ #
-# Helper functions #
-# ================ #
-def get_color_map(group=C.COL_CLASS):
-   arr = C.CLASSES
-   if group == C.COL_PAY:
-      arr = C.PAYS
-   elif group == C.COL_FREQ:
-      arr = C.FREQS
-   return {elm: hue for elm, hue in zip(arr, HUES)}
 
 
 # =========== #
@@ -61,7 +36,7 @@ st.header(':shopping_trolley: 開')
 df_out = pd.DataFrame()
 
 # === Cash === #
-df_cash = get_df_cash(SHEET_ID_CASH)
+df_cash = get_df_cash(C.SHEET_ID_CASH)
 df_out = df_out.append(df_cash, ignore_index=True)
 
 # === Bank === #
@@ -70,10 +45,10 @@ df_ctbc_spending = parse_spending_from_ctbc(df_ctbc)
 df_out = df_out.append(df_ctbc_spending, ignore_index=True)
 
 # === Credit card === #
-df_citi = get_df_citi(SHEET_ID_CARD_CITI, ['2022'])
+df_citi = get_df_citi(C.SHEET_ID_CARD_CITI, ['2022'])
 df_out = df_out.append(df_citi, ignore_index=True)
 
-df_tsib = get_df_tsib(SHEET_ID_CARD_TSIB, ['2022'])
+df_tsib = get_df_tsib(C.SHEET_ID_CARD_TSIB, ['2022'])
 df_out = df_out.append(df_tsib, ignore_index=True)
 
 # === Infer tag, class, freq === #
@@ -137,7 +112,7 @@ else:
 fig_monthly_total.update_xaxes(
    title_text=C.COL_MM,
    showgrid=False,
-   tickfont_size=FONT_SIZE_TICK
+   tickfont_size=C.FONT_SIZE_TICK
 )
 fig_monthly_total.update_yaxes(
    title_text='萬',
@@ -145,7 +120,7 @@ fig_monthly_total.update_yaxes(
    tickmode='array',
    tickvals=[i * 1E4 for i in range(max_amount_in_ban7 + 1)],
    ticktext=list(range(max_amount_in_ban7 + 1)),
-   tickfont_size=FONT_SIZE_TICK,
+   tickfont_size=C.FONT_SIZE_TICK,
    tickwidth=10
 )
 st.plotly_chart(fig_monthly_total, use_container_width=True)
@@ -185,7 +160,7 @@ for col_idx, ym_idx in enumerate(ym_indices):
       by=col_group,
       as_index=False
    )[C.COL_AMOUNT].agg('sum')
-   df_by_group[COL_PCT] = (
+   df_by_group[C.COL_PCT] = (
       df_by_group[C.COL_AMOUNT] / df_by_group[C.COL_AMOUNT].sum() * 1E2
    ).transform(lambda pct: f'{pct:.1f}')
 
@@ -195,7 +170,7 @@ for col_idx, ym_idx in enumerate(ym_indices):
       values=C.COL_AMOUNT,
       color=col_group,
       color_discrete_map=get_color_map(col_group),
-      hover_data=[COL_PCT]
+      hover_data=[C.COL_PCT]
    )
    fig_by_group.update_traces(
       hovertemplate='%{customdata[0][1]}=%{customdata[0][0]}%<extra></extra>'
@@ -207,11 +182,11 @@ for col_idx, ym_idx in enumerate(ym_indices):
 fig_recent_months.update_traces(
    textposition='inside',
    textinfo='label+value',
-   textfont_size=FONT_SIZE_TEXT,
+   textfont_size=C.FONT_SIZE_TEXT,
    insidetextorientation='horizontal'
 )
 fig_recent_months.update_layout(
-   hoverlabel=dict(font_size=FONT_SIZE_HOVER)
+   hoverlabel=dict(font_size=C.FONT_SIZE_HOVER)
 )
 st.plotly_chart(fig_recent_months, use_container_width=True)
 
@@ -256,7 +231,7 @@ for idx, cls in enumerate(df_by_group[col_group]):
          values=df_by_tag[C.COL_AMOUNT],
          textposition='inside',
          textinfo='label+value',
-         textfont_size=FONT_SIZE_TEXT,
+         textfont_size=C.FONT_SIZE_TEXT,
          insidetextorientation='horizontal',
          hoverinfo='label+percent',
          marker=dict(
@@ -267,7 +242,7 @@ for idx, cls in enumerate(df_by_group[col_group]):
       row=1, col=(idx + 1)
    )
 fig_target_month.update_layout(
-   hoverlabel=dict(font_size=FONT_SIZE_HOVER)
+   hoverlabel=dict(font_size=C.FONT_SIZE_HOVER)
 )
 st.plotly_chart(fig_target_month, use_container_width=True)
 

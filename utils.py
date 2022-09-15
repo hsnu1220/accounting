@@ -1,8 +1,8 @@
-import requests
 import io
+import requests
 import pandas as pd
+from plotly import express as px
 import consts as C
-
 
 
 # =============== #
@@ -286,3 +286,19 @@ def get_df_tsib(sheet_id, tables=C.YY_LIST):
    df[C.COL_PAY] = df[C.COL_PAY].replace('', C.PAY_CARD)
 
    return df
+
+
+
+########
+# Plot #
+########
+def get_color_map(group=C.COL_CLASS):
+   arr = C.CLASSES
+   if group == C.COL_PAY:
+      arr = C.PAYS
+   elif group == C.COL_FREQ:
+      arr = C.FREQS
+   map_hue = {
+      elm: hue for elm, hue in zip(arr, px.colors.qualitative.Set3)
+   }
+   return map_hue

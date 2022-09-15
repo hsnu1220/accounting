@@ -10,6 +10,9 @@ PAGE_ICON = ':whale:'
 # ============ #
 END_POINT = 'https://docs.google.com/spreadsheets/d'
 SHEET_ID_BANK_CTBC = '1OqB6azVpGt6ebkDyKboPyk2-Gy45jn9Ht5nupG7bOTc'
+SHEET_ID_CASH = '1DNvY54rC1IaExN-xgnMYW3ru5lNXv0RjbqswakcGQh8'
+SHEET_ID_CARD_CITI = '1_eIEiaS6IiKqTIrSVUaNqd5jtjO2M9IWa2zsPIOsYpQ'
+SHEET_ID_CARD_TSIB = '1uM-1q8jDAgpPuyAdRVdWX97EXJAFmUkbtuXk8p0AqME'
 YY_LIST = ['2021', '2022']
 
 
@@ -154,3 +157,13 @@ PAY_CARD = '卡'
 PAY_CASH = '現金'
 
 PAYS = [PAY_CARD, PAY_DIGIT, PAY_CASH]
+
+
+########
+# Plot #
+########
+COL_PCT = '比例'
+
+FONT_SIZE_TICK = 16
+FONT_SIZE_TEXT = 20
+FONT_SIZE_HOVER = 16

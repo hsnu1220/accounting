@@ -1,9 +1,23 @@
 import streamlit as st
+import consts as C
 
 
+# =========== #
+# Page config #
+# =========== #
+st.set_page_config(
+   page_title=C.PAGE_TITLE,
+   page_icon=C.PAGE_ICON,
+   layout='wide',
+   initial_sidebar_state='collapsed'
+)
 
+
+#############
+# Decripton #
+#############
 STR_MD = """
-## 標
+### 標
 - 租：月租
    - 蹛：(出遊)住宿、管理費
    - 水電：水、電、瓦斯、電信(網路)
@@ -37,7 +51,7 @@ STR_MD = """
    - 通勤：捷運、UBike(抓「店」中關鍵字「悠遊付」)、GoShare
    - 坐車：計程車、(出遊之)火車、高鐵、飛機
 
-## 頻率
+### 頻率
 - 每月
 - 隔月
 - 𨑨迌：出遊、環島
@@ -46,9 +60,10 @@ STR_MD = """
    - 抓「項」中關鍵字「儲值」
    - 預先買的(展演)門票，先付錢後享受
 - 訂閱
+   - 保險算訂閱，類別同保險項目
 - (空白)：預設為一擺
 
-## 方式
+### 方式
 - 卡：信用卡
 - 數碼：銀行轉帳、數位支付(街口、Line Pay、悠遊付)
 - (空白)：預設為現金
