@@ -14,8 +14,8 @@ st.set_page_config(
 )
 
 
-# ======= #
-# Balance #
-# ======= #
-st.header('儉')
+# ====== #
+# Income #
+# ====== #
+st.header(':moneybag: 儉')
 st.markdown(':construction: :construction_worker: :construction:')

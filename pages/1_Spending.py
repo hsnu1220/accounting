@@ -57,7 +57,7 @@ st.set_page_config(
 # ======== #
 # Spending #
 # ======== #
-st.header('開')
+st.header(':shopping_trolley: 開')
 df_out = pd.DataFrame()
 
 # === Cash === #
