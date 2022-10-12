@@ -119,7 +119,8 @@ def store_to_tag(s):
       '誠記',
       '全家',
       '素食',
-      'ＯＫ'
+      'ＯＫ',
+      '巧福'
    ]):
       return C.TAG_FORAGE
    elif any(kw in s for kw in [
@@ -140,6 +141,7 @@ def store_to_tag(s):
       '臺北表演藝術中心',
       '融藝',
       'ｕｄｎ售票',
+      '口袋售票',
       'ＫＫＴＩＸ',
       '威秀',
       '秀泰'
