@@ -107,6 +107,7 @@ def store_to_tag(s):
       '川川川川',
       '春秋大滷',
       '好想見麵',
+      '麵懸一生',
       '麥味登',
       '龍涎居',
       '麥當勞',
@@ -133,6 +134,7 @@ def store_to_tag(s):
       '清心',
       '烏弄',
       '山焙',
+      '樂法',
       '５嵐'
    ]):
       return C.TAG_DRINK
@@ -147,11 +149,11 @@ def store_to_tag(s):
       '秀泰'
    ]):
       return C.TAG_SHOW
-   elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特']):
+   elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特', '馬修單車']):
       return C.TAG_EXERCISE
    elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡', 'Ｇｏ Ｓｈａｒｅ']):
       return C.TAG_COMMUTE
-   elif any(kw in s for kw in ['計程車', '大都會衛星']):
+   elif any(kw in s for kw in ['計程車', '大都會衛星', '優步']):
       return C.TAG_TAXI
    else:
       return C.TAG_DEFAULT
