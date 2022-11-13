@@ -151,7 +151,7 @@ def store_to_tag(s):
       return C.TAG_SHOW
    elif any(kw in s for kw in ['ＤＥＣＡＴＨＬＯＮ', '迪卡儂', '捷安特', '馬修單車']):
       return C.TAG_EXERCISE
-   elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡', 'Ｇｏ Ｓｈａｒｅ']):
+   elif any(kw in s for kw in ['微笑單車', '悠遊付', '悠遊卡', 'Ｇｏ Ｓｈａｒｅ', '格上租車']):
       return C.TAG_COMMUTE
    elif any(kw in s for kw in ['計程車', '大都會衛星', '優步']):
       return C.TAG_TAXI
