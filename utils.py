@@ -31,7 +31,9 @@ def rm_float(s):
 
 
 def is_credit_bill(s):
-   return any(kw in s for kw in ['花旗銀行信用卡', '阿魚', '台新', '國泰', '渣打'])
+   return any(
+      kw in s for kw in ['花旗銀行信用卡', '阿魚', '台新', '國泰', '渣打', '華南']
+   )
 
 
 # ============== #
@@ -103,6 +105,7 @@ def store_to_tag(s):
    elif any(kw in s for kw in [
       'ＦｏｏｄＰａｎｄａ',
       'ｆｏｏｄｐａｎｄａ',
+      'Ｓｕｂｗａｙ',
       '誠品信義店',
       '川川川川',
       '春秋大滷',
@@ -110,6 +113,7 @@ def store_to_tag(s):
       '麵懸一生',
       '麥味登',
       '龍涎居',
+      '五燈獎',
       '麥當勞',
       '休息站',
       '優食',
