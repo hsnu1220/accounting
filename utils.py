@@ -32,7 +32,7 @@ def rm_float(s):
 
 def is_credit_bill(s):
    return any(
-      kw in s for kw in ['花旗銀行信用卡', '阿魚', '台新', '國泰', '渣打', '華南']
+      kw in s for kw in ['花旗', '阿魚', '台新', '國泰', '渣打', '華南']
    )
 
 
