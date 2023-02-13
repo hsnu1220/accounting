@@ -48,7 +48,7 @@ df_out = df_out.append(df_ctbc_spending, ignore_index=True)
 df_citi = get_df_citi(C.SHEET_ID_CARD_CITI, tables=['2022', '2023'])
 df_out = df_out.append(df_citi, ignore_index=True)
 
-df_tsib = get_df_tsib(C.SHEET_ID_CARD_TSIB, tables=['2022'])
+df_tsib = get_df_tsib(C.SHEET_ID_CARD_TSIB, tables=['2022', '2023'])
 df_out = df_out.append(df_tsib, ignore_index=True)
 
 # === Infer tag, class, freq === #
