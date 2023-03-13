@@ -100,7 +100,7 @@ def store_to_tag(s):
       return C.TAG_FURNISH
    elif any(kw in s for kw in ['日藥本舖', '康是美', '金興發', '大創', '寶雅']):
       return C.TAG_CONSUMABLE
-   elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯', '黑沃']):
+   elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯', '黑沃', 'ＤＯＮ ＤＯＮ ＤＯ']):
       return C.TAG_MARKET
    elif any(kw in s for kw in [
       'ＦｏｏｄＰａｎｄａ',
@@ -112,6 +112,7 @@ def store_to_tag(s):
       '春秋大滷',
       '好想見麵',
       '麵懸一生',
+      '潮味決',
       '麥味登',
       '龍涎居',
       '五燈獎',
