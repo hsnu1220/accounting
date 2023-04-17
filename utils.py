@@ -100,7 +100,7 @@ def store_to_tag(s):
       return C.TAG_FURNISH
    elif any(kw in s for kw in ['日藥本舖', '康是美', '金興發', '大創', '寶雅']):
       return C.TAG_CONSUMABLE
-   elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯', '黑沃', 'ＤＯＮ ＤＯＮ ＤＯ']):
+   elif any(kw in s for kw in ['健康食彩', '大潤發', '家樂福', '全聯', '黑沃', 'ＤＯＮ']):
       return C.TAG_MARKET
    elif any(kw in s for kw in [
       'ＦｏｏｄＰａｎｄａ',
@@ -108,10 +108,12 @@ def store_to_tag(s):
       'Ｓｕｂｗａｙ',
       'ＳＵＢＷＡ',
       '誠品信義店',
+      '小木屋鬆餅',
       '川川川川',
       '春秋大滷',
       '好想見麵',
       '麵懸一生',
+      '平成十九',
       '潮味決',
       '麥味登',
       '龍涎居',
@@ -134,6 +136,7 @@ def store_to_tag(s):
    elif any(kw in s for kw in [
       'ＣＯＭＥＢＵＹ',
       '約翰紅茶',
+      '天仁茗茶',
       '萊爾富',
       '茶湯會',
       '康青龍',
