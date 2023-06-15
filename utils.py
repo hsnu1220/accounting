@@ -105,8 +105,10 @@ def store_to_tag(s):
    elif any(kw in s for kw in [
       'ＦｏｏｄＰａｎｄａ',
       'ｆｏｏｄｐａｎｄａ',
+      'Ｌａｚｙ Ｐａ',
       'Ｓｕｂｗａｙ',
       'ＳＵＢＷＡ',
+      '二代福林福州乾',
       '誠品信義店',
       '小木屋鬆餅',
       '川川川川',
@@ -269,7 +271,7 @@ def get_df_citi(sheet_id, tables=C.YY_LIST):
       lambda arr: arr[0]
    )
    df.drop(columns=[C.COL_DATE], inplace=True)
-   df = df[~df[C.COL_AMOUNT].str.startswith('-')]
+   df.query(f"{C.COL_AMOUNT} > 0", inplace=True)
    df[C.COL_AMOUNT] = df[C.COL_AMOUNT].transform(rm_float).transform(rm_comma)
    # 連加：Line Pay
    for kw in ('街口', '連加'):
